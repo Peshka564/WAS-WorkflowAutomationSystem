@@ -1,0 +1,25 @@
+services:
+  client:
+    build: ./client
+    container_name: client
+    ports:
+      - 8080:5173
+    develop:
+      watch:
+        - action: sync
+          path: ./client
+          target: /client
+          ignore:
+            - node_modules/
+            - dist/
+    restart: unless-stopped
+  api:
+    build: ./api
+    container_name: api
+    ports:
+      - 3000:3000
+    develop:
+      watch:
+        - action: rebuild
+          path: ./api
+          target: ./build
