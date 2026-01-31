@@ -16,7 +16,7 @@ func main() {
         AllowedMethods: []string{"GET"},
     }))
     r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		  w.Write([]byte("Hello, Dad!"))
+		  w.Write([]byte("Hello, Mama!"))
     })
     http.ListenAndServe(":3000", r)
 }

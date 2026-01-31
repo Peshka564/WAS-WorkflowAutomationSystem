@@ -1,0 +1,39 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "go: run",
+      "type": "shell",
+      "command": "air",
+      "options": {
+        "cwd": "${workspaceFolder}/api/cmd"
+      },
+      "isBackground": true, // Lets VS Code know this runs forever
+      "problemMatcher": "$go"
+    },
+    {
+      "label": "react-vite: dev",
+      "type": "npm",
+      "script": "dev",
+      "path": "client",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "dedicated",
+        "showReuseMessage": false,
+        "clear": false,
+        "close": false
+      }
+    },
+    {
+      "label": "app",
+      "dependsOn": ["go: run", "react-vite: dev"],
+      "dependsOrder": "parallel",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    }
+  ]
+}

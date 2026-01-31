@@ -12,7 +12,7 @@ export function App() {
   return (
     <>
       <p>{val}</p>
-      <button onClick={onClick}>Save workflow</button>
+      <button onClick={onClick}>Save workflow1</button>
     </>
   );
 }
