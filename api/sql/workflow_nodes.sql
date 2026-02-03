@@ -1,0 +1,9 @@
+CREATE TABLE workflow_nodes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    workflow_id INT REFERENCES workflows(id),
+    task_name VARCHAR(255) NOT NULL,
+    workflow_type INT NOT NULL,
+    position JSON
+);

@@ -6,7 +6,7 @@
       "type": "shell",
       "command": "air",
       "options": {
-        "cwd": "${workspaceFolder}/api/cmd"
+        "cwd": "${workspaceFolder}/api"
       },
       "isBackground": true, // Lets VS Code know this runs forever
       "problemMatcher": "$go"
