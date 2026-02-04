@@ -21,7 +21,7 @@ func (nt WorkflowNodeType) String() string {
 	}
 }
 
-type Node struct {
+type WorkflowNode struct {
 	BaseModel
 	WorkflowId   int
 	TaskName     string

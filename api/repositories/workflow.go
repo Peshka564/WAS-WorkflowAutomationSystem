@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	errs "github.com/Peshka564/WAS-WorkflowAutomationSystem/errors"
 	"github.com/Peshka564/WAS-WorkflowAutomationSystem/models"
 )
 
@@ -24,7 +25,7 @@ func (repo *Workflow) FindById(id int) (*models.Workflow, error) {
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			fmt.Printf("No workflow found\n");
-			return nil, err
+			return nil, errs.NotFoundError{}
 		}
 		fmt.Printf("Could not scan row/some other error\n");
 		fmt.Println(err)

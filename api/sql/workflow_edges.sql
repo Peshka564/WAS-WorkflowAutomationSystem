@@ -3,5 +3,6 @@ CREATE TABLE workflow_edges (
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     node_from INT REFERENCES workflow_nodes(id),
-    node_to INT REFERENCES workflow_nodes(id)
+    node_to INT REFERENCES workflow_nodes(id),
+    workflow_id INT NOT NULL
 );

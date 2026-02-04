@@ -1,7 +1,8 @@
 package models
 
-type Edge struct {
+type WorkflowEdge struct {
 	BaseModel
-	NodeFrom int
-	NodeTo   int
+	NodeFrom   int
+	NodeTo     int
+	WorkflowId int
 }
