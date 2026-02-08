@@ -62,10 +62,10 @@ export interface Workflow {
 
 export interface NodeData {
   id: string;
-  displayId: string;
-  serviceName: string;
-  taskName: string;
-  workflowId: number;
+  display_id: string;
+  service_name: string;
+  task_name: string;
+  workflow_id: number;
   type: 'listener' | 'action' | 'transformer';
   position: string;
   config: string;
@@ -74,10 +74,10 @@ export interface NodeData {
 
 export interface EdgeData {
   id: string;
-  displayId: string;
-  workflowId: number;
-  nodeFrom: string;
-  nodeTo: string;
+  display_id: string;
+  workflow_id: number;
+  node_from: string;
+  node_to: string;
 }
 
 export interface WorkflowData {

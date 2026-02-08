@@ -16,7 +16,7 @@ type WorkflowNode struct {
 
 // TODO: Wrap these errors
 func (repo *WorkflowNode) FindById(id string) (*models.WorkflowNode, error) {
-	stmt, err := repo.Db.Prepare("SELECT * FROM workflow_nodes WHERE id = ?");
+	stmt, err := repo.Db.Prepare("SELECT id, created_at, updated_at, workflow_id, display_id, service_name, task_name, type, config, credential_id, position FROM workflow_nodes WHERE id = ?");
 	if err != nil {
 		fmt.Printf("Could not form prepared stmt\n");
 		return nil, err

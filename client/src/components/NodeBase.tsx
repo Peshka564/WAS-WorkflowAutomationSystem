@@ -3,6 +3,7 @@ import type { WorkflowNodeDisplaySelector } from '../types/workflow';
 import { serviceToUi } from '../utils/service-to-ui';
 
 export function NodeBase({ data }: { data: WorkflowNodeDisplaySelector }) {
+  console.log(data);
   const mainColor = serviceToUi[data.serviceName].color;
   const secondaryColor = serviceToUi[data.serviceName].textColor;
 

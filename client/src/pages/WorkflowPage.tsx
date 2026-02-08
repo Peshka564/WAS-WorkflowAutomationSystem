@@ -98,25 +98,27 @@ export function WorkflowPage({ allNodes }: Props) {
 
       // Map Backend Nodes -> Frontend Nodes
       const loadedNodes = existingWorkflow.nodes.map((node: NodeData) => ({
-        id: node.displayId,
+        id: node.display_id,
         position: JSON.parse(node.position),
         type: 'node' as const,
         data: {
           dbId: node.id,
-          serviceName: node.serviceName,
-          taskName: node.taskName,
+          serviceName: node.service_name,
+          taskName: node.task_name,
           type: node.type,
           config: JSON.parse(node.config),
           credentialId: node.credential_id,
         },
       }));
+      console.log(loadedNodes);
       setNodes(loadedNodes);
 
+      console.log(existingWorkflow);
       // Map Backend Edges -> Frontend Edges
       const loadedEdges = existingWorkflow.edges.map((edge: EdgeData) => ({
-        id: edge.displayId,
-        source: edge.nodeFrom,
-        target: edge.nodeTo,
+        id: edge.display_id,
+        source: edge.node_from,
+        target: edge.node_to,
         markerEnd: {
           type: MarkerType.ArrowClosed,
           width: 20,
@@ -125,6 +127,7 @@ export function WorkflowPage({ allNodes }: Props) {
         },
         style: { strokeWidth: 2 },
       }));
+      console.log(loadedEdges);
       setEdges(loadedEdges);
     }
   }, [existingWorkflow]);
@@ -265,7 +268,7 @@ export function WorkflowPage({ allNodes }: Props) {
           <ReactFlow
             nodes={nodes}
             edges={edges}
-            nodeTypes={nodeTypes} // Passed from constant
+            nodeTypes={nodeTypes}
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
