@@ -1,5 +1,7 @@
 package models
 
+import "time"
+
 type WorkflowNodeType int
 
 const (
@@ -22,9 +24,15 @@ func (nt WorkflowNodeType) String() string {
 }
 
 type WorkflowNode struct {
-	BaseModel
+	Id        string
+	CreatedAt time.Time
+	UpdatedAt time.Time
+
 	WorkflowId   int
-	TaskName     string
-	WorkflowType WorkflowNodeType
+	ServiceName  string
+	ActionName   string
+	Type         WorkflowNodeType
+	Config       string // JSON encoded
+	CredentialId int
 	Position     string // JSON encoded position { x: ..., y: ... }
 }
