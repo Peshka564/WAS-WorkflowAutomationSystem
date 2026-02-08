@@ -63,3 +63,9 @@ CREATE TABLE users (
     name VARCHAR(255) NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
 );
+
+CREATE TABLE trigger_states (
+    node_id VARCHAR(255) PRIMARY KEY REFERENCES workflow_nodes(id),
+    last_check_at TIMESTAMP,
+    last_message_id VARCHAR(100)
+);

@@ -33,6 +33,6 @@ type WorkflowNode struct {
 	TaskName   string
 	Type         WorkflowNodeType
 	Config       string // JSON encoded
-	CredentialId int
+	CredentialId *int
 	Position     string // JSON encoded position { x: ..., y: ... }
 }
