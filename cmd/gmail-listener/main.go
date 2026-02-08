@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"net/mail"
 	"os"
 	"time"
 
@@ -31,7 +32,6 @@ type GmailListener struct {
 
 type TriggerJob struct {
 	NodeId       string
-	WorkflowId   int
 	Credentialid int
 	LastCheckAt  time.Time
 	// This is used as a hack because there are cases when we can get duplicate gmail emails
@@ -44,13 +44,12 @@ func (l *GmailListener) Poll() {
 	rows, err := l.Db.Query(`
         SELECT 
             n.id, 
-            n.workflow_id, 
             n.credential_id, 
             COALESCE(t.last_check_at, CAST('1971-01-01 00:00:00' AS DATETIME)), 
             COALESCE(t.last_message_id, '')
         FROM workflow_nodes n
         LEFT JOIN trigger_states t ON n.id = t.node_id
-        WHERE n.type = 'listener' 
+        WHERE n.type = 0 
           AND n.service_name = 'gmail'
         ORDER BY t.last_check_at ASC
         LIMIT 10
@@ -66,7 +65,6 @@ func (l *GmailListener) Poll() {
 		var job TriggerJob
 		err := rows.Scan(
             &job.NodeId, 
-            &job.WorkflowId, 
             &job.Credentialid, 
             &job.LastCheckAt, 
             &job.LastMessageId,
@@ -155,7 +153,10 @@ func (l *GmailListener) CheckForNewEmails(job TriggerJob) {
 	})
 	from := ""
 	if fromHeader != nil {
-		from = (*fromHeader).Value
+		parsedAddr, err := mail.ParseAddress((*fromHeader).Value)
+		if(err == nil) {
+			from = parsedAddr.Address
+		}
 	}
 
 	body := fullMsg.Snippet
@@ -168,7 +169,7 @@ func (l *GmailListener) CheckForNewEmails(job TriggerJob) {
 		subject, from, body, messageID)
 
 	_, err = l.Orchestrator.TriggerWorkflow(ctx, &pb.TriggerRequest{
-		WorkflowId:     int32(job.WorkflowId),
+		TriggerNodeId: job.NodeId,
 		InitialPayload: payload,
 	})
 

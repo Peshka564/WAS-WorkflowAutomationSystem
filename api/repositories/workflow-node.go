@@ -15,14 +15,25 @@ type WorkflowNode struct {
 }
 
 // TODO: Wrap these errors
-func (repo *WorkflowNode) FindById(id int) (*models.WorkflowNode, error) {
+func (repo *WorkflowNode) FindById(id string) (*models.WorkflowNode, error) {
 	stmt, err := repo.Db.Prepare("SELECT * FROM workflow_nodes WHERE id = ?");
 	if err != nil {
 		fmt.Printf("Could not form prepared stmt\n");
 		return nil, err
 	}
 	var workflowNode models.WorkflowNode
-	err = stmt.QueryRow(id).Scan(&workflowNode.Id, &workflowNode.CreatedAt, &workflowNode.UpdatedAt, &workflowNode.WorkflowId, &workflowNode.TaskName, &workflowNode.Type, &workflowNode.Position)
+	err = stmt.QueryRow(id).Scan(
+		&workflowNode.Id, 
+		&workflowNode.CreatedAt, 
+		&workflowNode.UpdatedAt,
+		&workflowNode.WorkflowId, 
+		&workflowNode.ServiceName,
+		&workflowNode.TaskName, 
+		&workflowNode.Type,
+		&workflowNode.Config,
+		&workflowNode.CredentialId,
+		&workflowNode.Position,
+	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			fmt.Printf("No node found\n");
@@ -51,7 +62,18 @@ func (repo *WorkflowNode) FindByWorkflowId(id int) ([]models.WorkflowNode, error
 
 	for rows.Next() {
 		var workflowNode models.WorkflowNode
-		err := rows.Scan(&workflowNode.Id, &workflowNode.CreatedAt, &workflowNode.UpdatedAt, &workflowNode.WorkflowId, &workflowNode.TaskName, &workflowNode.Type, &workflowNode.Position)
+		err := rows.Scan(
+			&workflowNode.Id, 
+			&workflowNode.CreatedAt, 
+			&workflowNode.UpdatedAt,
+			&workflowNode.WorkflowId, 
+			&workflowNode.ServiceName,
+			&workflowNode.TaskName, 
+			&workflowNode.Type,
+			&workflowNode.Config,
+			&workflowNode.CredentialId,
+			&workflowNode.Position,
+		)
 		if err != nil {
 			fmt.Printf("Could not scan row\n");
 			fmt.Println(err)
@@ -100,26 +122,20 @@ func (repo *WorkflowNode) InsertMany(workflowNodes []models.WorkflowNode) error 
 }
 
 func (repo *WorkflowNode) Insert(workflowNode *models.WorkflowNode) error {
-	stmt, err := repo.Db.Prepare("INSERT INTO workflow_nodes(workflow_id, task_name, workflow_type, position) VALUES (?, ?, ?, ?)");
+	stmt, err := repo.Db.Prepare("INSERT INTO workflow_nodes(id, workflow_id, task_name, type, position) VALUES (?, ?, ?, ?)");
 	if err != nil {
 		fmt.Printf("Could not form prepared stmt\n");
 		return err
 	}
 	defer stmt.Close()
 
-	res, err := stmt.Exec(workflowNode.WorkflowId, workflowNode.TaskName, workflowNode.Type, workflowNode.Position)
+	_, err = stmt.Exec(workflowNode.Id, workflowNode.WorkflowId, workflowNode.TaskName, workflowNode.Type.String(), workflowNode.Position)
 	if err != nil {
 		fmt.Printf("Could not scan row/some other error\n");
 		return err
 	}
 
-	newId, err := res.LastInsertId();
-	if err != nil {
-		fmt.Printf("Coult not get last insert id\n");
-		return err
-	}
-
-	newWorkflowNode, err := repo.FindById(int(newId));
+	newWorkflowNode, err := repo.FindById(workflowNode.Id);
 	if err != nil {
 		fmt.Printf("Could not get smth\n");
 		return err

@@ -24,14 +24,14 @@ type OrchestratorServiceServer struct {
 func (s *OrchestratorServiceServer) TriggerWorkflow(ctx context.Context, req *pb.TriggerRequest) (*pb.TriggerResponse, error) {
 	// Note: In a real system, use RabbitMQ or some other message broker here
 	go func() {
-		err := s.OrchestratorService.ExecuteWorkflow(context.Background(), int(req.WorkflowId), req.InitialPayload)
+		err := s.OrchestratorService.ExecuteWorkflow(context.Background(), req.TriggerNodeId, req.InitialPayload)
 		if err != nil {
 			log.Printf("Background execution failed: %v", err)
 		}
 	}()
 
 	return &pb.TriggerResponse{
-		ExecutionId: 1, // TODO: Get from DB, maybe uuid
+		ExecutionId: int32(1), // TODO: Get from DB, maybe uuid
 		Success:     true,
 	}, nil
 }
@@ -47,15 +47,16 @@ func main() {
 
 	// TODO: Use Service Discovery/Registry
 
-	// TODO: Validate when using service discovery
 	gmailConn, _ := grpc.NewClient("localhost:50052", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	defer gmailConn.Close()
-	// userConn, _ := grpc.NewClient("localhost:50052", grpc.WithTransportCredentials(insecure.NewCredentials()))
-	// userClient := pb.NewUserServiceClient(userConn)
+
+	userConn, _ := grpc.NewClient("localhost:50055", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	defer userConn.Close()
 
 	orchestrator := &orchestrator.OrchestratorService{
-		DB: db,
+		Db: db,
 		GmailService: pb.NewTaskWorkerClient(gmailConn),
+		UserService: pb.NewUserServiceClient(userConn),
 	}
 
 	listener, err := net.Listen("tcp", ":50051")

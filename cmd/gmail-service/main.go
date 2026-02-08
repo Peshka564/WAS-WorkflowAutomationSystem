@@ -28,6 +28,8 @@ type EmailConfig struct {
 
 func (s *GmailServer) ExecuteTask(ctx context.Context, req *pb.TaskRequest) (*pb.TaskResponse, error) {
 	if(req.TaskName == "send_email") {
+		log.Println("New send_email message")
+
 		var config EmailConfig
 		// TODO: Validator
 		if err := json.Unmarshal([]byte(req.ConfigJson), &config); err != nil {

@@ -7,47 +7,54 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/Peshka564/WAS-WorkflowAutomationSystem/api/repositories"
 	"github.com/Peshka564/WAS-WorkflowAutomationSystem/shared/models"
 	pb "github.com/Peshka564/WAS-WorkflowAutomationSystem/shared/proto"
+	"github.com/Peshka564/WAS-WorkflowAutomationSystem/shared/utils"
 )
 
 type OrchestratorService struct {
-	DB           *sql.DB
+	Db           *sql.DB
 	GmailService pb.TaskWorkerClient
+	UserService pb.UserServiceClient
 	// service -> grpc address
 	// Registry     map[string]string
 }
 
-// ExecutionContext holds the state of a running workflow
 type ExecutionContext struct {
 	WorkflowID   int
-	CurrentData  map[string]interface{} // The "Bag of State" (trigger.body, step_1.data, etc)
+	// The "Bag of State"
+	// TODO: Store this in DB
+	CurrentData  map[string]interface{}
 }
 
-func (orchestrator *OrchestratorService) ExecuteWorkflow(ctx context.Context, workflowID int, initialPayload string) error {
-	log.Printf("Starting Workflow %d", workflowID)
+func (orchestrator *OrchestratorService) ExecuteWorkflow(ctx context.Context, listenerNodeId string, initialPayload string) error {
+	workflowNodeRepo := repositories.WorkflowNode{ Db: orchestrator.Db }
 
-	// 1. Initialize State
-	// We parse the initial trigger data (e.g., Webhook body) into the map
+	listenerNode, err := workflowNodeRepo.FindById(listenerNodeId)
+	if err != nil {
+		return fmt.Errorf("Invalid trigger node");
+	}
+	workflowId := listenerNode.WorkflowId
+
+	log.Printf("Starting Workflow %d", workflowId)
+
 	var triggerData map[string]interface{}
 	if err := json.Unmarshal([]byte(initialPayload), &triggerData); err != nil {
 		return fmt.Errorf("failed to parse initial payload: %v", err)
 	}
 
 	state := &ExecutionContext{
-		WorkflowID:  workflowID,
+		WorkflowID:  workflowId,
 		CurrentData: map[string]interface{}{"trigger": triggerData},
 	}
 
-	// 2. Load the Workflow Graph (Simplified: Fetching all nodes)
-	// In a real app, you would fetch edges to determine the order. 
-	// Here we assume nodes have a 'next_node_id' or we fetch them in order.
-	nodes, err := orchestrator.getNodesInLinearOrder(workflowID)
+	nodes, err := orchestrator.getNodesInLinearOrder(listenerNode)
 	if err != nil {
 		return err
 	}
+	
 
-	// 3. Execution Loop
 	for _, node := range nodes {
 		log.Printf("Executing Node: %s (%s)", node.Id, node.Type)
 
@@ -67,7 +74,6 @@ func (orchestrator *OrchestratorService) ExecuteWorkflow(ctx context.Context, wo
 		// Handle Failures
 		if execErr != nil {
 			log.Printf("Workflow Failed at Node %s: %v", node.Id, execErr)
-			// TODO: Add Retry Logic or 'Dead Letter Queue' here
 			return execErr 
 		}
 
@@ -75,12 +81,14 @@ func (orchestrator *OrchestratorService) ExecuteWorkflow(ctx context.Context, wo
 		// So Step 2 can access {{ step_1.data }}
 		var outputMap map[string]interface{}
 		if outputJSON != "" {
-			json.Unmarshal([]byte(outputJSON), &outputMap)
+			if err := json.Unmarshal([]byte(outputJSON), &outputMap); err != nil {
+				return fmt.Errorf("failed to parse outputJSON: %v", err)
+			}
 			state.CurrentData[node.Id] = outputMap
 		}
 	}
 
-	log.Printf("Workflow %d Completed Successfully", workflowID)
+	log.Printf("Workflow %d Completed Successfully", workflowId)
 	return nil
 }
 
@@ -92,19 +100,19 @@ func (orchestrator *OrchestratorService) executeAction(ctx context.Context, node
 	// 	return "", fmt.Errorf("variable resolution failed: %v", err)
 	// }
 
-	// B. Authentication (Zapier Style)
-	// If this node requires a connection (Gmail, Slack), fetch the fresh token
-	// var authToken string
-	// if node.ConnectionID != nil {
-	// 	// Call User Service to get fresh token (handles refresh logic transparently)
-	// 	tokenResp, err := e.UserService.GetConnectionToken(ctx, &pb.GetTokenRequest{
-	// 		ConnectionId: int32(*node.ConnectionID),
-	// 	})
-	// 	if err != nil {
-	// 		return "", fmt.Errorf("auth failure: %v", err)
-	// 	}
-	// 	authToken = tokenResp.AccessToken
-	// }
+	// Authenticate with the third party api for the task
+	var authToken string
+	if node.CredentialId != nil {
+		tokenResp, err := orchestrator.UserService.GetCredentials(ctx, &pb.GetCredentialsRequest{
+			CredentialId: int32(*node.CredentialId),
+		})
+		if err != nil {
+			return "", fmt.Errorf("auth failure: %v", err)
+		}
+		authToken = tokenResp.AccessToken
+	}
+	// authToken := "ya29.a0AUMWg_IGju77QL5gbPBXR0Z_1ZFXB03mJavKSWDjGMddsvJQawnl8Zdtll6-RKXLqNjTqx3DulxlFA8g1Xq-VuKWegDpmW6jUygtJ8gT_1xCvYCm07khWgXaHyIYGlm2b59qySPdkYmYPQ0EDxIoHsptzD7BgZYViFZhYahmqP9ltoLcVW1I9a0iQMwbUyjL3dK7-xoaCgYKAZQSARESFQHGX2Mi0XiCAw4EHh6pv2CUNeis5Q0206"
+
 	// C. Service Discovery
 	// Look up where the worker lives (e.g., "gmail" -> "localhost:50052")
 	// serviceAddr, exists := e.Registry[node.ServiceSlug]
@@ -116,7 +124,11 @@ func (orchestrator *OrchestratorService) executeAction(ctx context.Context, node
 	if(node.ServiceName == "gmail") {
 		res, err := orchestrator.GmailService.ExecuteTask(ctx, &pb.TaskRequest{
 			TaskName:   node.TaskName,
-			ConfigJson: node.Config,
+			ConfigJson: `{
+				"to": "petaryp@uni-sofia.bg",
+				"subject": "Answer",
+				"body": "Answer body"
+			}`,
 			AuthToken:  authToken,
 		})
 		if err != nil {
@@ -191,20 +203,46 @@ func (orchestrator *OrchestratorService) executeAction(ctx context.Context, node
 // 	return buf.String(), nil
 // }
 
-func (orchestrator *OrchestratorService) getNodesInLinearOrder(workflowID int) ([]models.WorkflowNode, error) {
-	// TODO: SELECT * FROM workflow_nodes WHERE workflow_id = ?
+func (orchestrator *OrchestratorService) getNodesInLinearOrder(listenerNode *models.WorkflowNode) ([]models.WorkflowNode, error) {
+	// TODO: Get from workflow service
+	nodeRepo := repositories.WorkflowNode{ Db: orchestrator.Db }
+	nodes, err := nodeRepo.FindByWorkflowId(listenerNode.WorkflowId)
+	if err != nil {
+        return nil, fmt.Errorf("failed to fetch nodes: %v", err)
+    }
+
+	idToNode := make(map[string]models.WorkflowNode)
+	for _, node := range nodes {
+		idToNode[node.Id] = node
+    }
+
+	adjList := make(map[string][]string)
 	
-	return []models.WorkflowNode{
-		{
-			Id:           "1",
-			WorkflowId: workflowID,
-			ServiceName:  "gmail",
-			TaskName:   "send_email",
-			Type:         models.WorkflowNodeType(1),
-			Config:   `{"to": "petaryp@uni-sofia.bg", "subject": "Testing orchestrator", "body": "Testing orchestrator body"}`,
-			CredentialId: 1,
-		},
-	}, nil
+	edgeRepo := repositories.WorkflowEdge{ Db: orchestrator.Db }
+	edges, err := edgeRepo.FindByWorkflowId(listenerNode.WorkflowId)
+	if err != nil {
+        return nil, fmt.Errorf("failed to fetch edges: %v", err)
+    }
+
+	for _, edge := range edges {
+		adjList[edge.NodeFrom] = append(adjList[edge.NodeFrom], edge.NodeTo)
+	}
+
+	// TODO: Only toposort the part of the graph that is reachable from listenerNode
+	toposorted, err := utils.TopologicalSort(adjList)
+	if err != nil {
+		return nil, err
+	}
+
+	// Remove the trigger
+	toposorted = toposorted[1:]
+
+	toposortedNodes := make([]models.WorkflowNode, 0)
+	for _, nodeId := range toposorted {
+		toposortedNodes = append(toposortedNodes, idToNode[nodeId])
+	}
+
+	return toposortedNodes, nil
 }
 
 // func (orchestrator *OrchestratorService) getWorkflowStatus(workflowId int): active {

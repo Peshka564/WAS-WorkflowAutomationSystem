@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log"
 	"net"
 	"os"
@@ -12,6 +13,7 @@ import (
 	"github.com/joho/godotenv"
 	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -32,7 +34,7 @@ func (s *UserServiceServer) Register(ctx context.Context, req *pb.RegisterReques
 		return nil, status.Error(codes.Internal, "failed to hash password")
 	}
 
-	// TODO: Repository
+	// TODO: Repository and a whole separate user service
 
 	res, err := s.DB.ExecContext(ctx, "INSERT INTO users (username, name, password_hash) VALUES (?, ?, ?)", req.Username, req.Name, hashedPassword)
 	userId, err := res.LastInsertId()
@@ -75,6 +77,7 @@ func (s *UserServiceServer) GetCredentials(ctx context.Context, req *pb.GetCrede
 	err := s.DB.QueryRowContext(ctx, `SELECT * FROM credentials WHERE id = ?`, req.CredentialId).Scan(&credential.Id, &credential.ServiceName, &credential.UserId, &credential.AccessToken, &credential.RefreshToken, &credential.ExpiresAt)
 
 	if err != nil {
+		fmt.Println(err)
 		return nil, status.Error(codes.NotFound, "connection not found")
 	}
 
@@ -88,7 +91,7 @@ func (s *UserServiceServer) GetCredentials(ctx context.Context, req *pb.GetCrede
 	conf := &oauth2.Config{
 		ClientID:     os.Getenv("GOOGLE_CLIENT_ID"),
 		ClientSecret: os.Getenv("GOOGLE_CLIENT_SECRET"),
-		Endpoint:     oauth2.Endpoint{TokenURL: "https://oauth2.googleapis.com/token"},
+		Endpoint:     google.Endpoint,
 	}
 
 	token := &oauth2.Token{
