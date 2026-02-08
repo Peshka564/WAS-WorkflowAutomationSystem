@@ -18,8 +18,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
-	"github.com/Peshka564/WAS-WorkflowAutomationSystem/services/api/utils"
 	pb "github.com/Peshka564/WAS-WorkflowAutomationSystem/shared/proto"
+	"github.com/Peshka564/WAS-WorkflowAutomationSystem/shared/utils"
 )
 
 const pollInterval int = 20
@@ -169,7 +169,7 @@ func (l *GmailListener) CheckForNewEmails(job TriggerJob) {
 		subject, from, body, messageID)
 
 	_, err = l.Orchestrator.TriggerWorkflow(ctx, &pb.TriggerRequest{
-		TriggerNodeId: job.NodeId,
+		ListenerNodeId: job.NodeId,
 		InitialPayload: payload,
 	})
 

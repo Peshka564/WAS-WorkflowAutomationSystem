@@ -35,14 +35,14 @@ func (repo *Workflow) FindById(id int) (*models.Workflow, error) {
 }
 
 func (repo *Workflow) Insert(workflow *models.Workflow) error {
-	stmt, err := repo.Db.Prepare("INSERT INTO workflows(name, active) VALUES (?, ?)");
+	stmt, err := repo.Db.Prepare("INSERT INTO workflows(name, active, user_id) VALUES (?, ?, ?)");
 	if err != nil {
 		fmt.Printf("Could not form prepared stmt\n");
 		return err
 	}
 	defer stmt.Close()
 
-	res, err := stmt.Exec(workflow.Name, workflow.Active)
+	res, err := stmt.Exec(workflow.Name, workflow.Active, workflow.UserId)
 	if err != nil {
 		fmt.Printf("Could not scan row/some other error\n");
 		return err
@@ -62,4 +62,51 @@ func (repo *Workflow) Insert(workflow *models.Workflow) error {
 	
 	*workflow = *newWorkflow
 	return nil;
+}
+
+func (repo *Workflow) FindByUserId(userId int64) ([]models.Workflow, error) {
+	stmt, err := repo.Db.Prepare("SELECT * FROM workflows WHERE user_id = ? ORDER BY updated_at DESC")
+	if err != nil {
+		return nil, err
+	}
+	defer stmt.Close()
+
+	rows, err := stmt.Query(userId)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var workflows []models.Workflow
+	for rows.Next() {
+		var w models.Workflow
+		if err := rows.Scan(&w.Id, &w.CreatedAt, &w.UpdatedAt, &w.Name, &w.Active, &w.UserId); err != nil {
+			return nil, err
+		}
+		workflows = append(workflows, w)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return workflows, nil
+}
+
+func (repo *Workflow) UpdateActiveStatus(id int, active bool) error {
+    stmt, err := repo.Db.Prepare("UPDATE workflows SET active = ? WHERE id = ?")
+    if err != nil {
+        return err
+    }
+    defer stmt.Close()
+
+    res, err := stmt.Exec(active, id)
+    if err != nil {
+        return err
+    }
+
+    rowsAffected, _ := res.RowsAffected()
+    if rowsAffected == 0 {
+        return fmt.Errorf("workflow not found or unauthorized")
+    }
+
+    return nil
 }

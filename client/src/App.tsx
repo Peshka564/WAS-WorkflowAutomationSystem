@@ -9,32 +9,33 @@ import Navbar from './components/Navbar';
 import type { ReactNode } from 'react';
 import { LoginPage } from './pages/LoginPage';
 import { AuthGuard } from './components/AuthGuard';
+import Dashboard from './pages/Dashboard';
 
 // TODO: Get these from db
 const allNodes: WorkflowNodeDisplaySelector[] = [
   {
     taskName: 'get-email',
-    service: 'gmail',
+    serviceName: 'gmail',
     type: 'listener',
   },
   {
     taskName: 'send-email',
-    service: 'gmail',
+    serviceName: 'gmail',
     type: 'action',
   },
   {
     taskName: 'open-pr',
-    service: 'github',
+    serviceName: 'github',
     type: 'action',
   },
   {
     taskName: 'get-issue',
-    service: 'github',
+    serviceName: 'github',
     type: 'listener',
   },
   {
     taskName: 'store-file',
-    service: 'drive',
+    serviceName: 'drive',
     type: 'action',
   },
 ];
@@ -53,27 +54,16 @@ export function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <Routes>
-          {/* Public Routes */}
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/login" element={<LoginPage />} />
 
-          {/* Community Page (Public) */}
-          {/* <Route
-            path="/community"
-            element={
-              <Layout>
-                <Community />
-              </Layout>
-            }
-          /> */}
-
-          {/* Protected Routes (Workflows) */}
           <Route
             path="/dashboard"
             element={
               <AuthGuard>
                 <Layout>
-                  <WorkflowPage allNodes={allNodes} />
+                  <Dashboard />
                 </Layout>
               </AuthGuard>
             }
@@ -90,18 +80,28 @@ export function App() {
               </AuthGuard>
             }
           />
-
-          {/* Dynamic Route for specific workflow */}
-          {/* <Route
+          <Route
             path="/workflow/:id"
             element={
+              <AuthGuard>
+                <ReactFlowProvider>
+                  <Layout>
+                    <WorkflowPage allNodes={allNodes} />
+                  </Layout>
+                </ReactFlowProvider>
+              </AuthGuard>
+            }
+          />
+
+          {/* <Route
+            path="/community"
+            element={
               <Layout>
-                <WorkflowDetail />
+                <Community />
               </Layout>
             }
           /> */}
 
-          {/* Default Redirect: Send unknown routes to Login or Community */}
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </BrowserRouter>

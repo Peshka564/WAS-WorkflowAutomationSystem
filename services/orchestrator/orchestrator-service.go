@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/Peshka564/WAS-WorkflowAutomationSystem/services/api/repositories"
 	"github.com/Peshka564/WAS-WorkflowAutomationSystem/shared/models"
 	pb "github.com/Peshka564/WAS-WorkflowAutomationSystem/shared/proto"
+	"github.com/Peshka564/WAS-WorkflowAutomationSystem/shared/repositories"
 	"github.com/Peshka564/WAS-WorkflowAutomationSystem/shared/utils"
 )
 

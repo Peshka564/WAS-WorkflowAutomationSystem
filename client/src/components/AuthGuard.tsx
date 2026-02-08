@@ -6,7 +6,6 @@ export const AuthGuard = ({ children }: { children: ReactNode }) => {
   const location = useLocation();
 
   const token = localStorage.getItem('token');
-  console.log(token);
   if (!token) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
@@ -15,7 +14,6 @@ export const AuthGuard = ({ children }: { children: ReactNode }) => {
     const decoded = jwtDecode(token);
 
     const currentTime = Date.now() / 1000;
-    console.log(token);
     if (decoded.exp && decoded.exp < currentTime) {
       localStorage.removeItem('token');
       return <Navigate to="/login" state={{ from: location }} replace />;

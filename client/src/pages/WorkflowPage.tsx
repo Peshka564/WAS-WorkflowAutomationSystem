@@ -11,124 +11,284 @@ import {
   type Edge,
   type EdgeChange,
   type NodeChange,
+  type NodeTypes,
 } from '@xyflow/react';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import '@xyflow/react/dist/style.css';
-import { useMutation } from '@tanstack/react-query';
-import { Box, Button, TextField, Typography } from '@mui/material';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import {
+  Box,
+  Button,
+  TextField,
+  Typography,
+  Paper,
+  Alert,
+  Snackbar,
+  CircularProgress,
+} from '@mui/material';
+import SaveIcon from '@mui/icons-material/Save';
 import axios from 'axios';
 import type {
+  EdgeData,
+  NodeData,
+  WorkflowData,
   WorkflowEdgeDisplay,
   WorkflowNodeDisplay,
   WorkflowNodeDisplaySelector,
 } from '../types/workflow';
-import { toPayload } from '../utils/transform';
+import { toCreateWorkflowDto } from '../utils/transform';
 import { NodeSelector } from '../components/NodeSelector';
 import { Node } from '../components/Node';
+import { useNavigate, useParams } from 'react-router-dom';
+
+const nodeTypes: NodeTypes = {
+  node: Node,
+};
 
 interface Props {
   allNodes: WorkflowNodeDisplaySelector[];
 }
 
 export function WorkflowPage({ allNodes }: Props) {
+  const { id } = useParams<{ id: string }>();
+  const workflowId = id ? Number(id) : undefined;
+
   const [nodes, setNodes] = useState<WorkflowNodeDisplay[]>([]);
   const [edges, setEdges] = useState<WorkflowEdgeDisplay[]>([]);
   const [workflowName, setWorkflowName] = useState('');
 
-  const mutation = useMutation({
-    mutationFn: async ({
-      nodes,
-      edges,
-      name,
-    }: {
-      nodes: WorkflowNodeDisplay[];
-      edges: WorkflowEdgeDisplay[];
-      name: string;
-    }) => {
-      console.log(1);
-      if (name.length === 0) {
-        throw new Error('You must specify workflow name');
-      }
-      if (nodes.length === 0) {
-        throw new Error('You must have at least one task in the workflow');
-      }
-      console.log(
-        await axios.post(
-          'http://localhost:3000/workflows/create',
-          JSON.stringify(toPayload(nodes, edges, name)),
-          {
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          }
-        )
+  // UI State for feedback
+  const [toast, setToast] = useState<{
+    open: boolean;
+    message: string;
+    severity: 'success' | 'error';
+  }>({
+    open: false,
+    message: '',
+    severity: 'success',
+  });
+
+  const navigate = useNavigate();
+
+  const { data: existingWorkflow, isLoading } = useQuery<
+    unknown,
+    Error,
+    WorkflowData
+  >({
+    queryKey: ['workflow', workflowId],
+    queryFn: async () => {
+      if (!workflowId) return null;
+      const token = localStorage.getItem('token');
+      const res = await axios.get(
+        `http://localhost:3000/api/workflows/${workflowId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
+      return res.data;
+    },
+    enabled: !!workflowId, // Only run if ID is provided
+  });
+
+  useEffect(() => {
+    if (existingWorkflow) {
+      setWorkflowName(existingWorkflow.workflow.name);
+
+      // Map Backend Nodes -> Frontend Nodes
+      const loadedNodes = existingWorkflow.nodes.map((node: NodeData) => ({
+        id: node.displayId,
+        position: JSON.parse(node.position),
+        type: 'node' as const,
+        data: {
+          dbId: node.id,
+          serviceName: node.serviceName,
+          taskName: node.taskName,
+          type: node.type,
+          config: JSON.parse(node.config),
+          credentialId: node.credential_id,
+        },
+      }));
+      setNodes(loadedNodes);
+
+      // Map Backend Edges -> Frontend Edges
+      const loadedEdges = existingWorkflow.edges.map((edge: EdgeData) => ({
+        id: edge.displayId,
+        source: edge.nodeFrom,
+        target: edge.nodeTo,
+        markerEnd: {
+          type: MarkerType.ArrowClosed,
+          width: 20,
+          height: 20,
+          color: '#666',
+        },
+        style: { strokeWidth: 2 },
+      }));
+      setEdges(loadedEdges);
+    }
+  }, [existingWorkflow]);
+
+  const mutation = useMutation<{ workflowId: number }, Error, void>({
+    mutationFn: async () => {
+      if (!workflowName.trim()) throw new Error('Workflow name is required');
+      if (nodes.length === 0)
+        throw new Error('Workflow must have at least one task');
+
+      const payload = toCreateWorkflowDto(nodes, edges, workflowName);
+      const token = localStorage.getItem('token');
+      const response = await axios.post(
+        'http://localhost:3000/api/workflows',
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      return response.data;
+    },
+    onSuccess: ({ workflowId }) => {
+      setToast({
+        open: true,
+        message: 'Workflow saved successfully!',
+        severity: 'success',
+      });
+      navigate(`/workflow/${workflowId}`);
+    },
+    onError: (error: Error) => {
+      setToast({ open: true, message: error.message, severity: 'error' });
     },
   });
 
   const onNodesChange = useCallback(
     (changes: NodeChange<WorkflowNodeDisplay>[]) =>
-      setNodes(nodesSnapshot => applyNodeChanges(changes, nodesSnapshot)),
+      setNodes(nds => applyNodeChanges(changes, nds)),
     []
   );
-  const onEdgesChange = useCallback((changes: EdgeChange<Edge>[]) => {
-    setEdges(edgesSnapshot => applyEdgeChanges(changes, edgesSnapshot));
-  }, []);
-  const onConnect = useCallback((params: Connection | Edge) => {
-    setEdges(edgesSnapshot => addEdge(params, edgesSnapshot));
-    setEdges(edgesSnapshot =>
-      edgesSnapshot.map(edge => ({
-        ...edge,
-        markerEnd: {
-          type: MarkerType.ArrowClosed,
-          width: 20,
-          height: 20,
-          color: '#gray',
-        },
-      }))
-    );
+
+  const onEdgesChange = useCallback(
+    (changes: EdgeChange<Edge>[]) =>
+      setEdges(eds => applyEdgeChanges(changes, eds)),
+    []
+  );
+
+  const onConnect = useCallback((params: Connection) => {
+    const newEdge = {
+      ...params,
+      markerEnd: {
+        type: MarkerType.ArrowClosed,
+        width: 20,
+        height: 20,
+        color: '#666',
+      },
+      style: { strokeWidth: 2 },
+    };
+    setEdges(eds => addEdge(newEdge, eds));
   }, []);
 
-  return (
-    <>
+  if (isLoading) {
+    return (
       <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="60vh"
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  return (
+    <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <Paper
+        elevation={1}
         sx={{
+          p: 2,
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
+          zIndex: 10,
         }}
       >
-        <Typography fontSize={18}>Create workflow</Typography>
-        <TextField
-          value={workflowName}
-          placeholder="Workflow Name"
-          onChange={e => setWorkflowName(e.target.value)}
-        />
-      </Box>
-      <NodeSelector
-        allNodes={allNodes}
-        onNodeAdd={change => onNodesChange([change])}
-      />
-      <Box style={{ width: '90%', height: '500px', border: '1px solid black' }}>
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          nodeTypes={{ node: Node }}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
-          fitView
-          proOptions={{ hideAttribution: true }}
+        <Box display="flex" alignItems="center" gap={2}>
+          <Typography variant="h6" fontWeight="bold">
+            Create Workflow
+          </Typography>
+          <TextField
+            size="small"
+            value={workflowName}
+            placeholder="Enter workflow name..."
+            onChange={e => setWorkflowName(e.target.value)}
+            error={mutation.isError && !workflowName}
+            sx={{ width: 300 }}
+          />
+        </Box>
+
+        <Button
+          variant="contained"
+          startIcon={
+            mutation.isPending ? (
+              <CircularProgress size={20} color="inherit" />
+            ) : (
+              <SaveIcon />
+            )
+          }
+          onClick={() => mutation.mutate()}
+          disabled={mutation.isPending}
         >
-          <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
-          <Controls />
-        </ReactFlow>
+          {mutation.isPending ? 'Saving...' : 'Save Workflow'}
+        </Button>
+      </Paper>
+
+      <Box sx={{ display: 'flex', flexGrow: 1, overflow: 'hidden' }}>
+        <Box
+          sx={{
+            width: 250,
+            borderRight: '1px solid #e0e0e0',
+            bgcolor: '#f5f5f5',
+            p: 2,
+            overflowY: 'auto',
+          }}
+        >
+          <Typography variant="subtitle2" color="textSecondary" sx={{ mb: 2 }}>
+            Available Tasks
+          </Typography>
+          <NodeSelector
+            allNodes={allNodes}
+            onNodeAdd={change => onNodesChange([change])}
+          />
+        </Box>
+
+        <Box sx={{ flexGrow: 1, position: 'relative' }}>
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            nodeTypes={nodeTypes} // Passed from constant
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
+            fitView
+            proOptions={{ hideAttribution: true }}
+            snapToGrid
+          >
+            <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
+            <Controls />
+          </ReactFlow>
+        </Box>
       </Box>
-      <Button
-        onClick={() => mutation.mutate({ nodes, edges, name: workflowName })}
+
+      <Snackbar
+        open={toast.open}
+        autoHideDuration={6000}
+        onClose={() => setToast(prev => ({ ...prev, open: false }))}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
       >
-        {mutation.isPending ? 'Loading...' : 'Save workflow'}
-      </Button>
-    </>
+        <Alert severity={toast.severity} variant="filled">
+          {toast.message}
+        </Alert>
+      </Snackbar>
+    </Box>
   );
 }

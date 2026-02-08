@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package workflow;
+
+option go_package = "./pb";
+
+service Orchestrator {
+  rpc TriggerWorkflow (TriggerRequest) returns (TriggerResponse);
+}
+
+service TaskWorker {
+  rpc ExecuteTask (TaskRequest) returns (TaskResponse);
+}
+
+message TriggerRequest {
+  string listener_node_id = 1;
+  // JSON payload representing the initial data
+  string initial_payload = 2;
+}
+
+message TriggerResponse {
+  int32 execution_id = 1;
+  bool success = 2;
+}
+
+message TaskRequest {
+  string task_name = 1;
+  string config_json = 2;
+  string input_payload = 3;
+  string auth_token = 4;
+}
+
+message TaskResponse {
+  bool success = 1;
+  string output_payload = 2;
+  string error_message = 3;
+}

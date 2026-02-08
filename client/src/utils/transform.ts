@@ -6,7 +6,7 @@ import type {
   WorkflowNodeDisplay,
 } from '../types/workflow';
 
-export function toPayload(
+export function toCreateWorkflowDto(
   nodes: WorkflowNodeDisplay[],
   edges: WorkflowEdgeDisplay[],
   name: string
@@ -14,16 +14,23 @@ export function toPayload(
   const workflow = {
     name,
   };
+
   const nodesToSave: CreateWorkflowNode[] = nodes.map(node => ({
     displayId: node.id,
-    position: node.position,
-    service: node.data.service,
+    serviceName: node.data.serviceName,
     taskName: node.data.taskName,
+    type: node.data.type,
+    config: JSON.stringify(node.data.config) || '{}',
+    position: JSON.stringify(node.position),
+    credential_id: node.data.credentialId,
   }));
+
   const edgesToSave: CreateWorkflowEdge[] = edges.map(edge => ({
     from: edge.source,
     to: edge.target,
+    displayId: edge.id,
   }));
+
   return {
     workflow,
     nodes: nodesToSave,

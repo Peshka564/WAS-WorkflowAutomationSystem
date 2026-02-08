@@ -1,6 +1,9 @@
 package models
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 type WorkflowNodeType int
 
@@ -23,16 +26,32 @@ func (nt WorkflowNodeType) String() string {
 	}
 }
 
+
+func FromString(s string) WorkflowNodeType {
+	fmt.Println(s)
+	switch s {
+	case "listener":
+		return Listener
+	case "action":
+		return Action
+	case "transformer":
+		return Transformer
+	default:
+		panic("Invalid workflow node type")
+	}
+}
+
 type WorkflowNode struct {
 	Id        string
 	CreatedAt time.Time
 	UpdatedAt time.Time
 
+	DisplayId string
 	WorkflowId   int
 	ServiceName  string
 	TaskName   string
 	Type         WorkflowNodeType
 	Config       string // JSON encoded
-	CredentialId *int
+	CredentialId *int32
 	Position     string // JSON encoded position { x: ..., y: ... }
 }

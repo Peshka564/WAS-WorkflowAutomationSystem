@@ -28,7 +28,11 @@ export function NodeSelector({ allNodes, onNodeAdd }: Props) {
                 },
                 type: 'node',
                 data: {
-                  ...node,
+                  config: {},
+                  dbId: '',
+                  serviceName: node.serviceName,
+                  taskName: node.taskName,
+                  type: node.type,
                 },
               },
               type: 'add',

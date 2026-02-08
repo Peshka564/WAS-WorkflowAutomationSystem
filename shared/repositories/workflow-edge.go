@@ -16,7 +16,7 @@ type WorkflowEdge struct {
 
 // TODO: Wrap these errors
 func (repo *WorkflowEdge) FindByWorkflowId(id int) ([]models.WorkflowEdge, error) {
-	stmt, err := repo.Db.Prepare("SELECT * FROM workflow_edges WHERE workflow_id = ?");
+	stmt, err := repo.Db.Prepare("SELECT id, created_at, updated_at, node_from, node_to, workflow_id, display_id FROM workflow_edges WHERE workflow_id = ?");
 	if err != nil {
 		fmt.Printf("Could not form prepared stmt\n");
 		return nil, err
@@ -31,7 +31,7 @@ func (repo *WorkflowEdge) FindByWorkflowId(id int) ([]models.WorkflowEdge, error
 
 	for rows.Next() {
 		var workflowEdge models.WorkflowEdge
-		err := rows.Scan(&workflowEdge.Id, &workflowEdge.CreatedAt, &workflowEdge.UpdatedAt, &workflowEdge.NodeFrom, &workflowEdge.NodeTo, &workflowEdge.WorkflowId)
+		err := rows.Scan(&workflowEdge.Id, &workflowEdge.CreatedAt, &workflowEdge.UpdatedAt, &workflowEdge.NodeFrom, &workflowEdge.NodeTo, &workflowEdge.WorkflowId, &workflowEdge.DisplayId)
 		if err != nil {
 			fmt.Printf("Could not scan row\n");
 			fmt.Println(err)
@@ -52,13 +52,13 @@ func (repo *WorkflowEdge) FindByWorkflowId(id int) ([]models.WorkflowEdge, error
 }
 
 func (repo *WorkflowEdge) InsertMany(workflowEdges []models.WorkflowEdge) error {
-	sql := "INSERT INTO workflow_edges(node_from, node_to, workflow_id) VALUES"
+	sql := "INSERT INTO workflow_edges(id, display_id, node_from, node_to, workflow_id) VALUES"
 	var inserts []string
     var params []interface{}
 
     for _, edge := range workflowEdges {
-        inserts = append(inserts, "(?, ?, ?)")
-        params = append(params, edge.NodeFrom, edge.NodeTo, edge.WorkflowId)
+        inserts = append(inserts, "(?, ?, ?, ?, ?)")
+        params = append(params, edge.Id, edge.DisplayId, edge.NodeFrom, edge.NodeTo, edge.WorkflowId)
     }
 
     sql = sql + strings.Join(inserts, ",")

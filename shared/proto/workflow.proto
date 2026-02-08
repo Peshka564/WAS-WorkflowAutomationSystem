@@ -4,34 +4,96 @@ package workflow;
 
 option go_package = "./pb";
 
-service Orchestrator {
-  rpc TriggerWorkflow (TriggerRequest) returns (TriggerResponse);
+import "google/protobuf/timestamp.proto";
+
+service WorkflowService {
+    rpc GetWorkflows (GetWorkflowsRequest) returns (GetWorkflowsResponse);
+    rpc CreateWorkflow (CreateWorkflowRequest) returns (CreateWorkflowResponse);
+    rpc ActivateWorkflow (ActivateWorkflowRequest) returns (ActivateWorkflowResponse);
+    rpc GetWorkflowById (GetWorkflowByIdRequest) returns (GetWorkflowByIdResponse);
 }
 
-service TaskWorker {
-  rpc ExecuteTask (TaskRequest) returns (TaskResponse);
+// Data structures
+message Workflow {
+    int64 id = 1;
+    string name = 2;
+    bool is_active = 3;
+    int64 user_id = 4;
+    google.protobuf.Timestamp created_at = 5;
+    google.protobuf.Timestamp updated_at = 6;
 }
 
-message TriggerRequest {
-  string listener_node_id = 1;
-  // JSON payload representing the initial data
-  string initial_payload = 2;
+message NodeInput {
+    string display_id = 1;
+    string task_name = 2;
+    string service_name = 3;
+    string type = 4;
+    string position = 5;
+    string config = 6;
+    optional int32 credentialId = 7;
 }
 
-message TriggerResponse {
-  int32 execution_id = 1;
-  bool success = 2;
+message EdgeInput {
+    string display_id = 1;
+    string from_id = 2;
+    string to_id = 3;
 }
 
-message TaskRequest {
-  string task_name = 1;
-  string config_json = 2;
-  string input_payload = 3;
-  string auth_token = 4;
+message Node {
+    string id = 1;
+    string display_id = 2;
+    string task_name = 3;
+    string service_name = 4;
+    int64 workflow_id = 5;
+    string type = 6;
+    string position = 7;
+    string config = 8;
+    optional int32 credentialId = 9;
 }
 
-message TaskResponse {
-  bool success = 1;
-  string output_payload = 2;
-  string error_message = 3;
+message Edge {
+    string id = 1;
+    string display_id = 2;
+    string from_id = 3;
+    string to_id = 4;
+    int64 workflow_id = 5;
+}
+
+// Requests
+message GetWorkflowsRequest {
+    int64 user_id = 1;
+}
+
+message GetWorkflowsResponse {
+    repeated Workflow workflows = 1;
+}
+
+message CreateWorkflowRequest {
+    string name = 1;
+    int64 user_id = 2;
+    repeated NodeInput nodes = 3;
+    repeated EdgeInput edges = 4;
+}
+
+message CreateWorkflowResponse {
+    int64 id = 1;
+}
+
+message ActivateWorkflowRequest {
+    int64 id = 1;
+    bool active = 2;
+}
+
+message ActivateWorkflowResponse {
+    bool success = 1;
+}
+
+message GetWorkflowByIdRequest {
+    int64 id = 1;
+}
+
+message GetWorkflowByIdResponse {
+    Workflow workflow = 1;
+    repeated Node nodes = 2;
+    repeated Edge edges = 3;
 }

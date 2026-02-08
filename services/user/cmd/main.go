@@ -54,7 +54,6 @@ func (s *UserServiceServer) Register(ctx context.Context, req *pb.RegisterReques
 	}
 
 	token, _ := userService.GenerateJWT(userId, os.Getenv("JWT_SECRET"))
-	fmt.Println(token)
 
 	return &pb.AuthResponse{
 		Token: token,
@@ -75,7 +74,6 @@ func (s *UserServiceServer) Login(ctx context.Context, req *pb.LoginRequest) (*p
 	}
 
 	token, _ := userService.GenerateJWT(int64(user.Id), os.Getenv("JWT_SECRET"))
-	fmt.Println(token)
 
 	return &pb.AuthResponse{
 		Token: token,
@@ -151,7 +149,7 @@ func main() {
 		return;
 	}
 
-	listener	, err := net.Listen("tcp", ":50055")
+	listener, err := net.Listen("tcp", ":50055")
 	if err != nil {
 		log.Fatalf("Failed to listen: %v", err)
 	}

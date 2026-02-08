@@ -1,4 +1,4 @@
-package server
+package utils
 
 import (
 	"encoding/json"
@@ -7,7 +7,7 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-func parseJSON(r *http.Request, data interface{}) error {
+func ParseJSON(r *http.Request, data interface{}) error {
 	decoder := json.NewDecoder(r.Body)
 	return decoder.Decode(data)
 }
@@ -16,9 +16,11 @@ type ValidationErrorMessage struct {
 	Message map[string]string `json:"message"`
 }
 
-func formValidationErrorMessage(err error) string {
+func FormValidationErrorMessage(err error) string {
 	fieldErrors := err.(validator.ValidationErrors)
-	errorObj := ValidationErrorMessage{}
+	errorObj := ValidationErrorMessage{
+		Message: make(map[string]string),
+	}
 	for _, fieldErr := range fieldErrors {
 		errorObj.Message[fieldErr.Field()] = fieldErr.Error()
 	}
@@ -33,7 +35,7 @@ type ErrorMessage struct {
 	Message string `json:"message"`
 }
 
-func sendError(w http.ResponseWriter, errorCode int, errorMessage string) {
+func SendError(w http.ResponseWriter, errorCode int, errorMessage string) {
 	res, err := json.Marshal(ErrorMessage{errorMessage})
 	if err != nil {
 		panic("This should not happen")

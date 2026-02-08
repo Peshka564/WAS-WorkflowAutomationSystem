@@ -6,10 +6,12 @@ export interface WorkflowNodeDisplay {
   };
   type: 'node';
   data: {
-    service: string; //gmail, drive, etc...
-    type: 'listener' | 'action' | 'transformer';
-    isAuthenticated?: boolean;
+    dbId: string;
+    serviceName: string;
     taskName: string;
+    credentialId?: number;
+    type: 'listener' | 'action' | 'transformer';
+    config: Record<string, unknown>;
   };
 }
 
@@ -19,25 +21,26 @@ export interface WorkflowEdgeDisplay {
   target: string;
 }
 
-export type WorkflowNodeDisplaySelector = Omit<
-  WorkflowNodeDisplay['data'],
-  'isAuthenticated'
->;
+export type WorkflowNodeDisplaySelector = {
+  taskName: string;
+  serviceName: string;
+  type: 'listener' | 'action' | 'transformer';
+};
 
 export interface CreateWorkflowNode {
   displayId: string;
-  position: {
-    x: number;
-    y: number;
-  };
-  service: string; //gmail, drive, etc...
-  isAuthenticated?: boolean;
+  serviceName: string;
   taskName: string;
+  type: 'listener' | 'action' | 'transformer';
+  position: string;
+  config: string;
+  credential_id?: number;
 }
 
 export interface CreateWorkflowEdge {
   from: string;
   to: string;
+  displayId: string;
 }
 
 export interface CreateWorkflowPayload {
@@ -46,4 +49,39 @@ export interface CreateWorkflowPayload {
   };
   nodes: CreateWorkflowNode[];
   edges: CreateWorkflowEdge[];
+}
+
+export interface Workflow {
+  id: number;
+  created_at: Date;
+  updated_at: Date;
+  name: string;
+  active: boolean;
+  user_id: number;
+}
+
+export interface NodeData {
+  id: string;
+  displayId: string;
+  serviceName: string;
+  taskName: string;
+  workflowId: number;
+  type: 'listener' | 'action' | 'transformer';
+  position: string;
+  config: string;
+  credential_id?: number;
+}
+
+export interface EdgeData {
+  id: string;
+  displayId: string;
+  workflowId: number;
+  nodeFrom: string;
+  nodeTo: string;
+}
+
+export interface WorkflowData {
+  workflow: Workflow;
+  nodes: NodeData[];
+  edges: EdgeData[];
 }

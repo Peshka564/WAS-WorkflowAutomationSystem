@@ -24,7 +24,7 @@ type OrchestratorServiceServer struct {
 func (s *OrchestratorServiceServer) TriggerWorkflow(ctx context.Context, req *pb.TriggerRequest) (*pb.TriggerResponse, error) {
 	// Note: In a real system, use RabbitMQ or some other message broker here
 	go func() {
-		err := s.OrchestratorService.ExecuteWorkflow(context.Background(), req.TriggerNodeId, req.InitialPayload)
+		err := s.OrchestratorService.ExecuteWorkflow(context.Background(), req.ListenerNodeId, req.InitialPayload)
 		if err != nil {
 			log.Printf("Background execution failed: %v", err)
 		}

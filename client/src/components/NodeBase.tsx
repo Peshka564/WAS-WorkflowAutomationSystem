@@ -3,8 +3,8 @@ import type { WorkflowNodeDisplaySelector } from '../types/workflow';
 import { serviceToUi } from '../utils/service-to-ui';
 
 export function NodeBase({ data }: { data: WorkflowNodeDisplaySelector }) {
-  const mainColor = serviceToUi[data.service].color;
-  const secondaryColor = serviceToUi[data.service].textColor;
+  const mainColor = serviceToUi[data.serviceName].color;
+  const secondaryColor = serviceToUi[data.serviceName].textColor;
 
   return (
     <Card
@@ -27,7 +27,7 @@ export function NodeBase({ data }: { data: WorkflowNodeDisplaySelector }) {
           {data.taskName}
         </Typography>
         <Chip
-          label={data.service}
+          label={data.serviceName}
           sx={{ backgroundColor: secondaryColor, color: mainColor }}
         />
       </CardContent>

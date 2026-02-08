@@ -23,10 +23,11 @@ func (repo *WorkflowNode) FindById(id string) (*models.WorkflowNode, error) {
 	}
 	var workflowNode models.WorkflowNode
 	err = stmt.QueryRow(id).Scan(
-		&workflowNode.Id, 
+		&workflowNode.Id,
 		&workflowNode.CreatedAt, 
 		&workflowNode.UpdatedAt,
 		&workflowNode.WorkflowId, 
+		&workflowNode.DisplayId,
 		&workflowNode.ServiceName,
 		&workflowNode.TaskName, 
 		&workflowNode.Type,
@@ -47,7 +48,7 @@ func (repo *WorkflowNode) FindById(id string) (*models.WorkflowNode, error) {
 }
 
 func (repo *WorkflowNode) FindByWorkflowId(id int) ([]models.WorkflowNode, error) {
-	stmt, err := repo.Db.Prepare("SELECT * FROM workflow_nodes WHERE workflow_id = ?");
+	stmt, err := repo.Db.Prepare("SELECT id, created_at, updated_at, workflow_id, display_id, service_name, task_name, type, config, credential_id, position FROM workflow_nodes WHERE workflow_id = ?");
 	if err != nil {
 		fmt.Printf("Could not form prepared stmt\n");
 		return nil, err
@@ -64,9 +65,10 @@ func (repo *WorkflowNode) FindByWorkflowId(id int) ([]models.WorkflowNode, error
 		var workflowNode models.WorkflowNode
 		err := rows.Scan(
 			&workflowNode.Id, 
-			&workflowNode.CreatedAt, 
+			&workflowNode.CreatedAt,
 			&workflowNode.UpdatedAt,
 			&workflowNode.WorkflowId, 
+			&workflowNode.DisplayId,
 			&workflowNode.ServiceName,
 			&workflowNode.TaskName, 
 			&workflowNode.Type,
@@ -94,13 +96,13 @@ func (repo *WorkflowNode) FindByWorkflowId(id int) ([]models.WorkflowNode, error
 }
 
 func (repo *WorkflowNode) InsertMany(workflowNodes []models.WorkflowNode) error {
-	sql := "INSERT INTO workflow_nodes(workflow_id, task_name, workflow_type, position) VALUES"
+	sql := "INSERT INTO workflow_nodes(id, workflow_id, service_name, task_name, type, config, credential_id, position) VALUES"
 	var inserts []string
     var params []interface{}
 
     for _, node := range workflowNodes {
-        inserts = append(inserts, "(?, ?)")
-        params = append(params, node.WorkflowId, node.TaskName, node.Type, node.Position)
+        inserts = append(inserts, "(?, ?, ?, ?, ?, ?, ?, ?, ?)")
+        params = append(params, node.Id, node.DisplayId, node.WorkflowId, node.ServiceName, node.TaskName, node.Type, node.Config, node.CredentialId, node.Position)
     }
 
     sql = sql + strings.Join(inserts, ",")
@@ -122,14 +124,16 @@ func (repo *WorkflowNode) InsertMany(workflowNodes []models.WorkflowNode) error 
 }
 
 func (repo *WorkflowNode) Insert(workflowNode *models.WorkflowNode) error {
-	stmt, err := repo.Db.Prepare("INSERT INTO workflow_nodes(id, workflow_id, task_name, type, position) VALUES (?, ?, ?, ?)");
+	stmt, err := repo.Db.Prepare(`INSERT INTO
+	 workflow_nodes(id, display_id, workflow_id, service_name, task_name, type, config, credential_id, position) 
+	VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`);
 	if err != nil {
 		fmt.Printf("Could not form prepared stmt\n");
 		return err
 	}
 	defer stmt.Close()
 
-	_, err = stmt.Exec(workflowNode.Id, workflowNode.WorkflowId, workflowNode.TaskName, workflowNode.Type.String(), workflowNode.Position)
+	_, err = stmt.Exec(workflowNode.Id, workflowNode.DisplayId, workflowNode.WorkflowId, workflowNode.ServiceName, workflowNode.TaskName, workflowNode.Type, workflowNode.Config, workflowNode.CredentialId, workflowNode.Position)
 	if err != nil {
 		fmt.Printf("Could not scan row/some other error\n");
 		return err

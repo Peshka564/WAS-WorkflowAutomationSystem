@@ -22,6 +22,16 @@
       "problemMatcher": "$go"
     },
     {
+      "label": "workflow",
+      "type": "shell",
+      "command": "air",
+      "options": {
+        "cwd": "${workspaceFolder}/services/workflow"
+      },
+      "isBackground": true, // Lets VS Code know this runs forever
+      "problemMatcher": "$go"
+    },
+    {
       "label": "react-vite: dev",
       "type": "npm",
       "script": "dev",

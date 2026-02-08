@@ -23,7 +23,7 @@ message LoginRequest {
 }
 
 message AuthResponse {
-  string token = 1; // JWT for the frontend
+  string token = 1;
   User user = 2;
 }
 
