@@ -46,7 +46,7 @@ func (service *Workflow) insertNodes(ctx context.Context, nodes []dto.CreateWork
 		var transformedNode models.WorkflowNode
 		transformedNode.TaskName = node.TaskName
 		transformedNode.WorkflowId = newWorkflow.Id
-		transformedNode.WorkflowType = models.Listener
+		transformedNode.Type = models.Listener
 		jsonPos, _ := json.Marshal(node.Position)
 		transformedNode.Position = string(jsonPos)
 		

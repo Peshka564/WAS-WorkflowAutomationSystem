@@ -13,13 +13,13 @@ service TaskWorker {
 }
 
 message TriggerRequest {
-  string workflow_id = 1;
+  int32 workflow_id = 1;
   // JSON payload representing the initial data (e.g., webhook body)
   string initial_payload = 2;
 }
 
 message TriggerResponse {
-  string execution_id = 1;
+  int32 execution_id = 1;
   bool success = 2;
 }
 

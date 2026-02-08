@@ -38,7 +38,6 @@ func (s *GmailServer) ExecuteTask(ctx context.Context, req *pb.TaskRequest) (*pb
 			return &pb.TaskResponse{Success: false, ErrorMessage: "Missing OAuth2 Access Token"}, nil
 		}
 
-		// TODO: Validate
 		client := oauth2.NewClient(ctx, oauth2.StaticTokenSource(
             &oauth2.Token{AccessToken: req.AuthToken},
         ))

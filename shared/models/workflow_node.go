@@ -30,7 +30,7 @@ type WorkflowNode struct {
 
 	WorkflowId   int
 	ServiceName  string
-	ActionName   string
+	TaskName   string
 	Type         WorkflowNodeType
 	Config       string // JSON encoded
 	CredentialId int

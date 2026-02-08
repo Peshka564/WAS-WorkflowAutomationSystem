@@ -22,7 +22,7 @@ func (repo *WorkflowNode) FindById(id int) (*models.WorkflowNode, error) {
 		return nil, err
 	}
 	var workflowNode models.WorkflowNode
-	err = stmt.QueryRow(id).Scan(&workflowNode.Id, &workflowNode.CreatedAt, &workflowNode.UpdatedAt, &workflowNode.WorkflowId, &workflowNode.TaskName, &workflowNode.WorkflowType, &workflowNode.Position)
+	err = stmt.QueryRow(id).Scan(&workflowNode.Id, &workflowNode.CreatedAt, &workflowNode.UpdatedAt, &workflowNode.WorkflowId, &workflowNode.TaskName, &workflowNode.Type, &workflowNode.Position)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			fmt.Printf("No node found\n");
@@ -51,7 +51,7 @@ func (repo *WorkflowNode) FindByWorkflowId(id int) ([]models.WorkflowNode, error
 
 	for rows.Next() {
 		var workflowNode models.WorkflowNode
-		err := rows.Scan(&workflowNode.Id, &workflowNode.CreatedAt, &workflowNode.UpdatedAt, &workflowNode.WorkflowId, &workflowNode.TaskName, &workflowNode.WorkflowType, &workflowNode.Position)
+		err := rows.Scan(&workflowNode.Id, &workflowNode.CreatedAt, &workflowNode.UpdatedAt, &workflowNode.WorkflowId, &workflowNode.TaskName, &workflowNode.Type, &workflowNode.Position)
 		if err != nil {
 			fmt.Printf("Could not scan row\n");
 			fmt.Println(err)
@@ -78,7 +78,7 @@ func (repo *WorkflowNode) InsertMany(workflowNodes []models.WorkflowNode) error 
 
     for _, node := range workflowNodes {
         inserts = append(inserts, "(?, ?)")
-        params = append(params, node.WorkflowId, node.TaskName, node.WorkflowType, node.Position)
+        params = append(params, node.WorkflowId, node.TaskName, node.Type, node.Position)
     }
 
     sql = sql + strings.Join(inserts, ",")
@@ -107,7 +107,7 @@ func (repo *WorkflowNode) Insert(workflowNode *models.WorkflowNode) error {
 	}
 	defer stmt.Close()
 
-	res, err := stmt.Exec(workflowNode.WorkflowId, workflowNode.TaskName, workflowNode.WorkflowType, workflowNode.Position)
+	res, err := stmt.Exec(workflowNode.WorkflowId, workflowNode.TaskName, workflowNode.Type, workflowNode.Position)
 	if err != nil {
 		fmt.Printf("Could not scan row/some other error\n");
 		return err

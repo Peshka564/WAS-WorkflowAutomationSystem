@@ -32,7 +32,7 @@ CREATE TABLE workflow_nodes (
     workflow_id INT NOT NULL REFERENCES workflows(id) ON DELETE CASCADE,
     
     service_name VARCHAR(50) NOT NULL,
-    action_name VARCHAR(50) NOT NULL,
+    task_name VARCHAR(50) NOT NULL,
 
     -- listener, action, transfomer
     type VARCHAR(50) NOT NULL,
