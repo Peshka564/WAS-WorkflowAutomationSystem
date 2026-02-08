@@ -6,10 +6,11 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/Peshka564/WAS-WorkflowAutomationSystem/api/dto"
-	errs "github.com/Peshka564/WAS-WorkflowAutomationSystem/api/errors"
 	"github.com/Peshka564/WAS-WorkflowAutomationSystem/api/repositories"
 	"github.com/Peshka564/WAS-WorkflowAutomationSystem/api/services"
+	"github.com/Peshka564/WAS-WorkflowAutomationSystem/shared/dto"
+
+	errs "github.com/Peshka564/WAS-WorkflowAutomationSystem/shared/errors"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-playground/validator/v10"
 )

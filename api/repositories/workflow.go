@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 
-	errs "github.com/Peshka564/WAS-WorkflowAutomationSystem/api/errors"
-	"github.com/Peshka564/WAS-WorkflowAutomationSystem/api/models"
+	errs "github.com/Peshka564/WAS-WorkflowAutomationSystem/shared/errors"
+	"github.com/Peshka564/WAS-WorkflowAutomationSystem/shared/models"
 )
 
 type Workflow struct {
