@@ -11,5 +11,5 @@ func GenerateJWT(userId int64, JWTSecret string) (string, error) {
 		"user_id": userId,
 		"exp":     time.Now().Add(72 * time.Hour).Unix(),
 	})
-	return token.SignedString(JWTSecret)
+	return token.SignedString([]byte(JWTSecret))
 }

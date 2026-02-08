@@ -25,7 +25,7 @@ func (repo *Workflow) FindById(id int) (*models.Workflow, error) {
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			fmt.Printf("No workflow found\n");
-			return nil, errs.NotFoundError{}
+			return nil, errs.NotFoundError{EntityName: "Workflow"}
 		}
 		fmt.Printf("Could not scan row/some other error\n");
 		fmt.Println(err)

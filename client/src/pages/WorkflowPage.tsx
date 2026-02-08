@@ -23,8 +23,8 @@ import type {
   WorkflowNodeDisplaySelector,
 } from '../types/workflow';
 import { toPayload } from '../utils/transform';
-import { NodeSelector } from './NodeSelector';
-import { Node } from './Node';
+import { NodeSelector } from '../components/NodeSelector';
+import { Node } from '../components/Node';
 
 interface Props {
   allNodes: WorkflowNodeDisplaySelector[];

@@ -17,8 +17,10 @@
     "@tanstack/react-query": "^5.90.20",
     "@xyflow/react": "^12.9.2",
     "axios": "^1.13.4",
+    "jwt-decode": "^4.0.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
+    "react-router-dom": "^7.13.0",
     "uuid": "^13.0.0"
   },
   "devDependencies": {

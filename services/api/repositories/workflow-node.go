@@ -37,7 +37,7 @@ func (repo *WorkflowNode) FindById(id string) (*models.WorkflowNode, error) {
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			fmt.Printf("No node found\n");
-			return nil, errs.NotFoundError{}
+			return nil, errs.NotFoundError{EntityName: "Workflow node"}
 		}
 		fmt.Printf("Could not scan row/some other error\n");
 		fmt.Println(err)

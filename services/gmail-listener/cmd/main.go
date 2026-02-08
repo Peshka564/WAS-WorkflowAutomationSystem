@@ -18,7 +18,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
-	"github.com/Peshka564/WAS-WorkflowAutomationSystem/api/utils"
+	"github.com/Peshka564/WAS-WorkflowAutomationSystem/services/api/utils"
 	pb "github.com/Peshka564/WAS-WorkflowAutomationSystem/shared/proto"
 )
 

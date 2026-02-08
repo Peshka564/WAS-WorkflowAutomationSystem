@@ -2,11 +2,21 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "go: run",
+      "label": "api",
       "type": "shell",
       "command": "air",
       "options": {
-        "cwd": "${workspaceFolder}/api"
+        "cwd": "${workspaceFolder}/services/api"
+      },
+      "isBackground": true, // Lets VS Code know this runs forever
+      "problemMatcher": "$go"
+    },
+    {
+      "label": "user",
+      "type": "shell",
+      "command": "air",
+      "options": {
+        "cwd": "${workspaceFolder}/services/user"
       },
       "isBackground": true, // Lets VS Code know this runs forever
       "problemMatcher": "$go"
@@ -28,7 +38,7 @@
     },
     {
       "label": "app",
-      "dependsOn": ["go: run", "react-vite: dev"],
+      "dependsOn": ["api", "user", "react-vite: dev"],
       "dependsOrder": "parallel",
       "group": {
         "kind": "build",

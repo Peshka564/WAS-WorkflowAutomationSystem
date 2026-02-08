@@ -3,12 +3,14 @@ package main
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	"net"
 	"os"
 	"time"
 
+	"github.com/go-sql-driver/mysql"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/joho/godotenv"
 	"golang.org/x/crypto/bcrypt"
@@ -37,13 +39,22 @@ func (s *UserServiceServer) Register(ctx context.Context, req *pb.RegisterReques
 	// TODO: Repository and a whole separate user service
 
 	res, err := s.DB.ExecContext(ctx, "INSERT INTO users (username, name, password_hash) VALUES (?, ?, ?)", req.Username, req.Name, hashedPassword)
+	if err != nil {
+        var mysqlErr *mysql.MySQLError
+        if errors.As(err, &mysqlErr) && mysqlErr.Number == 1062 {
+            return nil, status.Error(codes.AlreadyExists, "username already exists")
+        }
+        return nil, err
+    }
+
 	userId, err := res.LastInsertId()
 	if err != nil {
 		// TODO: Check
-		return nil, status.Error(codes.AlreadyExists, "email already exists")
+		return nil, status.Error(codes.AlreadyExists, "username already exists")
 	}
 
 	token, _ := userService.GenerateJWT(userId, os.Getenv("JWT_SECRET"))
+	fmt.Println(token)
 
 	return &pb.AuthResponse{
 		Token: token,
@@ -64,6 +75,7 @@ func (s *UserServiceServer) Login(ctx context.Context, req *pb.LoginRequest) (*p
 	}
 
 	token, _ := userService.GenerateJWT(int64(user.Id), os.Getenv("JWT_SECRET"))
+	fmt.Println(token)
 
 	return &pb.AuthResponse{
 		Token: token,
@@ -133,7 +145,7 @@ func main() {
         return;
     }
 
-	err = godotenv.Load()
+	err = godotenv.Load("../../.env")
 	if err != nil {
 		log.Fatal("Could not load ENV vars", err);
 		return;

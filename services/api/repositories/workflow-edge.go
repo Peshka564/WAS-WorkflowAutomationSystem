@@ -42,7 +42,7 @@ func (repo *WorkflowEdge) FindByWorkflowId(id int) ([]models.WorkflowEdge, error
 	if err = rows.Err(); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			fmt.Printf("No edges found\n");
-			return nil, errs.NotFoundError{}
+			return nil, errs.NotFoundError{EntityName: "Workflow edge"}
 		}
 		fmt.Printf("Could not scan row/some other error\n");
 		fmt.Println(err)
