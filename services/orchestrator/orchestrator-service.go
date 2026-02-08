@@ -111,7 +111,6 @@ func (orchestrator *OrchestratorService) executeAction(ctx context.Context, node
 		}
 		authToken = tokenResp.AccessToken
 	}
-	// authToken := "ya29.a0AUMWg_IGju77QL5gbPBXR0Z_1ZFXB03mJavKSWDjGMddsvJQawnl8Zdtll6-RKXLqNjTqx3DulxlFA8g1Xq-VuKWegDpmW6jUygtJ8gT_1xCvYCm07khWgXaHyIYGlm2b59qySPdkYmYPQ0EDxIoHsptzD7BgZYViFZhYahmqP9ltoLcVW1I9a0iQMwbUyjL3dK7-xoaCgYKAZQSARESFQHGX2Mi0XiCAw4EHh6pv2CUNeis5Q0206"
 
 	// C. Service Discovery
 	// Look up where the worker lives (e.g., "gmail" -> "localhost:50052")
