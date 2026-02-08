@@ -4,11 +4,11 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/Peshka564/WAS-WorkflowAutomationSystem/dto"
-	errs "github.com/Peshka564/WAS-WorkflowAutomationSystem/errors"
-	"github.com/Peshka564/WAS-WorkflowAutomationSystem/models"
-	"github.com/Peshka564/WAS-WorkflowAutomationSystem/repositories"
-	api_utils "github.com/Peshka564/WAS-WorkflowAutomationSystem/utils"
+	"github.com/Peshka564/WAS-WorkflowAutomationSystem/api/dto"
+	errs "github.com/Peshka564/WAS-WorkflowAutomationSystem/api/errors"
+	"github.com/Peshka564/WAS-WorkflowAutomationSystem/api/models"
+	"github.com/Peshka564/WAS-WorkflowAutomationSystem/api/repositories"
+	api_utils "github.com/Peshka564/WAS-WorkflowAutomationSystem/api/utils"
 )
 
 type Workflow struct {

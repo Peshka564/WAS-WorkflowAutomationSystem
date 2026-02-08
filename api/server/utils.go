@@ -13,7 +13,7 @@ func parseJSON(r *http.Request, data interface{}) error {
 }
 
 type ValidationErrorMessage struct {
-	Message map[string]string
+	Message map[string]string `json:"message"`
 }
 
 func formValidationErrorMessage(err error) string {
@@ -30,7 +30,7 @@ func formValidationErrorMessage(err error) string {
 }
 
 type ErrorMessage struct {
-	Message string
+	Message string `json:"message"`
 }
 
 func sendError(w http.ResponseWriter, errorCode int, errorMessage string) {

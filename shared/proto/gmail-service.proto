@@ -1,0 +1,16 @@
+syntax = 'proto3';
+
+package proto;
+option go_package = "./pb";
+
+service GmailService {
+   rpc sendEmail(Email) returns (EmailResponse) {}
+};
+
+message Email {
+   string email = 1;
+};
+
+message EmailResponse {
+   string res = 1;
+};

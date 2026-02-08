@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/Peshka564/WAS-WorkflowAutomationSystem/dto"
-	errs "github.com/Peshka564/WAS-WorkflowAutomationSystem/errors"
-	"github.com/Peshka564/WAS-WorkflowAutomationSystem/repositories"
-	"github.com/Peshka564/WAS-WorkflowAutomationSystem/services"
+	"github.com/Peshka564/WAS-WorkflowAutomationSystem/api/dto"
+	errs "github.com/Peshka564/WAS-WorkflowAutomationSystem/api/errors"
+	"github.com/Peshka564/WAS-WorkflowAutomationSystem/api/repositories"
+	"github.com/Peshka564/WAS-WorkflowAutomationSystem/api/services"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-playground/validator/v10"
 )
@@ -29,13 +29,11 @@ func (app *App) CreateWorkflow(w http.ResponseWriter, r *http.Request) {
 		sendError(w, http.StatusBadRequest, "Invalid JSON payload")
 		return
 	}
-	fmt.Println("OPAAAAAAAAAAAAAAAAAAAAAAAAAa")
 	err = app.Validator.Struct(payload)
 	if err != nil {
 		sendError(w, http.StatusBadRequest, formValidationErrorMessage(err))
 		return
 	}
-	fmt.Println("HEREEEEEEEEEEEEEEEEEEEEEEEEEEEEEEee")
 
 	workflowService := services.Workflow{
 		WorkflowRepo: repositories.Workflow{Db: app.Db},

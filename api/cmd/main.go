@@ -5,7 +5,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/Peshka564/WAS-WorkflowAutomationSystem/server"
+	"github.com/Peshka564/WAS-WorkflowAutomationSystem/api/server"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
