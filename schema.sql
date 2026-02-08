@@ -5,12 +5,14 @@ CREATE TABLE services (
 );
 
 CREATE TABLE credentials (
-    id SERIAL PRIMARY KEY,
+    id INT AUTO_INCREMENT PRIMARY KEY,
     service_name VARCHAR(50) REFERENCES services(service_name),
-    user_id INT NOT NULL, 
-    access_token TEXT NOT NULL,   -- Encrypted
-    refresh_token TEXT,           -- Encrypted
-    name VARCHAR(100)             -- e.g. "My Personal Gmail"
+    user_id INT NOT NULL,
+    
+    -- OAuth credentials
+    access_token TEXT NOT NULL,
+    refresh_token TEXT,
+    expires_at TIMESTAMP,
 );
 
 CREATE TABLE workflows (
@@ -50,4 +52,14 @@ CREATE TABLE workflow_edges (
     node_from VARCHAR(255) REFERENCES workflow_nodes(id),
     node_to VARCHAR(255) REFERENCES workflow_nodes(id),
     workflow_id INT NOT NULL
+);
+
+CREATE TABLE users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    username VARCHAR(255) UNIQUE NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
 );
