@@ -136,6 +136,16 @@ export function RegisterPage() {
                 'Sign Up'
               )}
             </Button>
+
+            <Button
+              type="button"
+              fullWidth
+              variant="contained"
+              sx={{ mt: 3, mb: 2, py: 1.5 }}
+              onClick={() => navigate('/login')}
+            >
+              To Login
+            </Button>
           </Box>
           {mutation.isError && (
             <Typography color="red">
