@@ -38,6 +38,7 @@ export function ConnectionsPage() {
   useEffect(() => {
     fetchConnections();
     handleRedirectParams();
+    /* eslint-disable-next-line react-hooks/exhaustive-deps */
   }, []);
 
   const handleRedirectParams = () => {
