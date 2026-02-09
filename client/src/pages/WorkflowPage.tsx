@@ -117,6 +117,9 @@ export function WorkflowPage({ allNodes }: Props) {
       // Map Backend Edges -> Frontend Edges
       const loadedEdges = existingWorkflow.edges.map((edge: EdgeData) => ({
         id: edge.display_id,
+        data: {
+          dbId: edge.id,
+        },
         source:
           existingWorkflow.nodes.find(({ id }) => edge.node_from == id)
             ?.display_id ?? '',
@@ -142,7 +145,12 @@ export function WorkflowPage({ allNodes }: Props) {
       if (nodes.length === 0)
         throw new Error('Workflow must have at least one task');
 
-      const payload = toCreateWorkflowDto(nodes, edges, workflowName);
+      const payload = toCreateWorkflowDto(
+        nodes,
+        edges,
+        workflowName,
+        workflowId
+      );
       const token = localStorage.getItem('token');
       const response = await axios.post(
         'http://localhost:3000/api/workflows',

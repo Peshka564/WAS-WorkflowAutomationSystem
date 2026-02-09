@@ -19,6 +19,9 @@ export interface WorkflowEdgeDisplay {
   id: string;
   source: string;
   target: string;
+  data?: {
+    dbId?: string;
+  };
 }
 
 export type WorkflowNodeDisplaySelector = {
@@ -28,6 +31,7 @@ export type WorkflowNodeDisplaySelector = {
 };
 
 export interface CreateWorkflowNode {
+  id?: string;
   displayId: string;
   serviceName: string;
   taskName: string;
@@ -38,6 +42,7 @@ export interface CreateWorkflowNode {
 }
 
 export interface CreateWorkflowEdge {
+  id?: string;
   from: string;
   to: string;
   displayId: string;
@@ -45,6 +50,7 @@ export interface CreateWorkflowEdge {
 
 export interface CreateWorkflowPayload {
   workflow: {
+    id?: number;
     name: string;
   };
   nodes: CreateWorkflowNode[];

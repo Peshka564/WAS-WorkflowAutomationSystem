@@ -9,13 +9,16 @@ import type {
 export function toCreateWorkflowDto(
   nodes: WorkflowNodeDisplay[],
   edges: WorkflowEdgeDisplay[],
-  name: string
+  name: string,
+  workflowId?: number
 ): CreateWorkflowPayload {
   const workflow = {
+    id: workflowId,
     name,
   };
 
   const nodesToSave: CreateWorkflowNode[] = nodes.map(node => ({
+    id: node.data.dbId,
     displayId: node.id,
     serviceName: node.data.serviceName,
     taskName: node.data.taskName,
@@ -25,11 +28,12 @@ export function toCreateWorkflowDto(
     credential_id: node.data.credentialId,
   }));
 
-  const edgesToSave: CreateWorkflowEdge[] = edges.map(edge => ({
+  const edgesToSave = edges.map(edge => ({
     from: edge.source,
     to: edge.target,
     displayId: edge.id,
-  }));
+    id: edge.data?.dbId,
+  })) satisfies CreateWorkflowEdge[];
 
   return {
     workflow,

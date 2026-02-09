@@ -47,72 +47,210 @@ func (s *WorkflowServiceServer) GetWorkflows(ctx context.Context, req *pb.GetWor
 	return &pb.GetWorkflowsResponse{Workflows: workflows}, nil
 }
 
+// func (s *WorkflowServiceServer) CreateWorkflow(ctx context.Context, req *pb.CreateWorkflowRequest) (*pb.CreateWorkflowResponse, error) {
+// 	workflowRepo := repositories.Workflow{ Db: s.Db }
+// 	workflowNodeRepo := repositories.WorkflowNode{ Db: s.Db }
+// 	workflowEdgeRepo := repositories.WorkflowEdge{ Db: s.Db }
+
+// 	// TODO: Transaction + Unit of Work
+	
+// 	workflowModel := &models.Workflow{
+// 		Name:   req.Name,
+// 		UserId: int(req.UserId),
+// 		Active: false,
+// 	}
+
+// 	if err := workflowRepo.Insert(workflowModel); err != nil {
+// 		log.Printf("Failed to insert workflow: %v", err)
+// 		return nil, status.Error(codes.Internal, "failed to create workflow")
+// 	}
+
+// 	workflowId := workflowModel.Id
+// 	nodeIdMap := make(map[string]string)
+// 	for _, nodeReq := range req.Nodes {
+// 		nodeModel := &models.WorkflowNode{
+// 			Id:         uuid.New().String(),
+// 			WorkflowId: workflowId,
+// 			ServiceName: nodeReq.ServiceName,
+// 			TaskName:   nodeReq.TaskName,
+// 			Type:       models.FromString(nodeReq.Type),
+// 			Config: 	nodeReq.Config,
+// 			CredentialId: nodeReq.CredentialId,
+// 			DisplayId: nodeReq.DisplayId,
+// 			Position:   nodeReq.Position,
+// 		}
+
+// 		fmt.Println(nodeModel)
+// 		if err := workflowNodeRepo.Insert(nodeModel); err != nil {
+// 			log.Printf("Failed to insert node %s: %v", nodeReq.DisplayId, err)
+// 			return nil, status.Error(codes.Internal, "failed to save workflow nodes")
+// 		}
+// 		nodeIdMap[nodeReq.DisplayId] = nodeModel.Id
+// 	}
+
+// 	var edgesToInsert []models.WorkflowEdge
+// 	for _, edgeReq := range req.Edges {
+// 		fromId, okFrom := nodeIdMap[edgeReq.FromId]
+// 		toId, okTo := nodeIdMap[edgeReq.ToId]
+
+// 		if !okFrom || !okTo {
+// 			return nil, status.Errorf(codes.InvalidArgument, "edge references unknown node: %s -> %s", edgeReq.FromId, edgeReq.ToId)
+// 		}
+// 		edgesToInsert = append(edgesToInsert, models.WorkflowEdge{
+// 			Id:         uuid.New().String(),
+// 			WorkflowId: workflowId,
+// 			DisplayId:  edgeReq.DisplayId,
+// 			NodeFrom:   fromId,
+// 			NodeTo:     toId,
+// 		})
+// 	}
+
+// 	if len(edgesToInsert) > 0 {
+// 		if err := workflowEdgeRepo.InsertMany(edgesToInsert); err != nil {
+// 			log.Printf("Failed to insert edges: %v", err)
+// 			return nil, status.Error(codes.Internal, "failed to save workflow connections")
+// 		}
+// 	}
+
+// 	return &pb.CreateWorkflowResponse{Id: int64(workflowId)}, nil
+// }
+
 func (s *WorkflowServiceServer) CreateWorkflow(ctx context.Context, req *pb.CreateWorkflowRequest) (*pb.CreateWorkflowResponse, error) {
-	workflowRepo := repositories.Workflow{ Db: s.Db }
-	workflowNodeRepo := repositories.WorkflowNode{ Db: s.Db }
-	workflowEdgeRepo := repositories.WorkflowEdge{ Db: s.Db }
+    workflowRepo := repositories.Workflow{Db: s.Db}
+    workflowNodeRepo := repositories.WorkflowNode{Db: s.Db}
+    workflowEdgeRepo := repositories.WorkflowEdge{Db: s.Db}
 
 	// TODO: Transaction + Unit of Work
-	
-	workflowModel := &models.Workflow{
-		Name:   req.Name,
-		UserId: int(req.UserId),
-		Active: false,
-	}
 
-	if err := workflowRepo.Insert(workflowModel); err != nil {
-		log.Printf("Failed to insert workflow: %v", err)
-		return nil, status.Error(codes.Internal, "failed to create workflow")
-	}
+    var workflowId int
+    if req.Id > 0 {
+        // Update the workflow
+        workflowId = int(req.Id)
 
-	workflowId := workflowModel.Id
-	nodeIdMap := make(map[string]string)
-	for _, nodeReq := range req.Nodes {
-		nodeModel := &models.WorkflowNode{
-			Id:         uuid.New().String(),
-			WorkflowId: workflowId,
-			ServiceName: nodeReq.ServiceName,
-			TaskName:   nodeReq.TaskName,
-			Type:       models.FromString(nodeReq.Type),
-			Config: 	nodeReq.Config,
-			CredentialId: nodeReq.CredentialId,
-			DisplayId: nodeReq.DisplayId,
-			Position:   nodeReq.Position,
+		if err := workflowRepo.Update(workflowId, req.Name); err != nil {
+             return nil, status.Errorf(codes.Internal, "failed to update workflow: %v", err)
+        }
+        
+        // Cleanup
+        existingNodes, _ := workflowNodeRepo.FindByWorkflowId(workflowId)
+        existingEdges, _ := workflowEdgeRepo.FindByWorkflowId(workflowId)
+        
+        incomingNodeIds := make(map[string]bool)
+        for _, n := range req.Nodes {
+            if n.Id != nil {
+                incomingNodeIds[*n.Id] = true
+            }
+        }
+		
+        incomingEdgeIds := make(map[string]bool)
+        for _, edge := range req.Edges {
+            if edge.Id != nil {
+                incomingEdgeIds[*edge.Id] = true
+            }
+        }
+
+        // Delete nodes that exist in db but are missing from the request
+        for _, dbNode := range existingNodes {
+            if !incomingNodeIds[dbNode.Id] {
+                if err := workflowNodeRepo.Delete(dbNode.Id); err != nil {
+                    log.Printf("Failed to delete stale node %s: %v", dbNode.Id, err)
+                }
+            }
+        }
+        fmt.Println(incomingEdgeIds)
+        fmt.Println(req.Edges)
+		for _, dbEdge := range existingEdges {
+            if !incomingEdgeIds[dbEdge.Id] {
+                fmt.Println("UH OH")
+                if err := workflowEdgeRepo.Delete(dbEdge.Id); err != nil {
+                    log.Printf("Failed to delete stale edge %s: %v", dbEdge.Id, err)
+                }
+            }
+        }
+    } else {
+        // Creating
+        workflowModel := &models.Workflow{
+            Name:   req.Name,
+            UserId: int(req.UserId),
+            Active: false,
+        }
+        if err := workflowRepo.Insert(workflowModel); err != nil {
+            return nil, status.Error(codes.Internal, "failed to create workflow")
+        }
+        workflowId = workflowModel.Id
+    }
+
+    // Map DisplayID -> Real UUID (needed for edges)
+    nodeIdMap := make(map[string]string) 
+
+    for _, nodeReq := range req.Nodes {
+        // Determine ID: Use existing if provided, else generate new UUID
+        var realId string
+        if nodeReq.Id != nil && *nodeReq.Id != "" {
+            realId = *nodeReq.Id
+        } else {
+            realId = uuid.New().String()
+        }
+
+		fmt.Println(nodeReq)
+
+        nodeModel := &models.WorkflowNode{
+            Id:           realId,
+            WorkflowId:   workflowId,
+            ServiceName:  nodeReq.ServiceName,
+            TaskName:     nodeReq.TaskName,
+            Type:         models.FromString(nodeReq.Type),
+            Config:       nodeReq.Config,
+            CredentialId: nodeReq.CredentialId,
+            DisplayId:    nodeReq.DisplayId,
+            Position:     nodeReq.Position,
+        }
+
+        if nodeReq.Id != nil && *nodeReq.Id != "" {
+            // UPDATE existing node
+            if err := workflowNodeRepo.Update(nodeModel); err != nil {
+                log.Printf("Failed to update node %s: %v", nodeReq.DisplayId, err)
+                return nil, status.Error(codes.Internal, "failed to update workflow nodes")
+            }
+        } else {
+            // INSERT new node
+            if err := workflowNodeRepo.Insert(nodeModel); err != nil {
+                log.Printf("Failed to insert node %s: %v", nodeReq.DisplayId, err)
+                return nil, status.Error(codes.Internal, "failed to save workflow nodes")
+            }
+        }
+        // Track the ID for edge creation
+        nodeIdMap[nodeReq.DisplayId] = realId
+    }
+
+    var edgesToInsert []models.WorkflowEdge
+    for _, edgeReq := range req.Edges {
+        fmt.Println("TEST")
+        fmt.Println(edgeReq)
+		if edgeReq.Id != nil {
+			continue
 		}
+        fromId, okFrom := nodeIdMap[edgeReq.FromId]
+        toId, okTo := nodeIdMap[edgeReq.ToId]
 
-		fmt.Println(nodeModel)
-		if err := workflowNodeRepo.Insert(nodeModel); err != nil {
-			log.Printf("Failed to insert node %s: %v", nodeReq.DisplayId, err)
-			return nil, status.Error(codes.Internal, "failed to save workflow nodes")
-		}
-		nodeIdMap[nodeReq.DisplayId] = nodeModel.Id
-	}
+        if okFrom && okTo {
+            edgesToInsert = append(edgesToInsert, models.WorkflowEdge{
+                Id:         uuid.New().String(),
+                WorkflowId: workflowId,
+                DisplayId:  edgeReq.DisplayId,
+                NodeFrom:   fromId,
+                NodeTo:     toId,
+            })
+        }
+    }
 
-	var edgesToInsert []models.WorkflowEdge
-	for _, edgeReq := range req.Edges {
-		fromId, okFrom := nodeIdMap[edgeReq.FromId]
-		toId, okTo := nodeIdMap[edgeReq.ToId]
+    if len(edgesToInsert) > 0 {
+        if err := workflowEdgeRepo.InsertMany(edgesToInsert); err != nil {
+            return nil, status.Error(codes.Internal, "failed to save workflow connections")
+        }
+    }
 
-		if !okFrom || !okTo {
-			return nil, status.Errorf(codes.InvalidArgument, "edge references unknown node: %s -> %s", edgeReq.FromId, edgeReq.ToId)
-		}
-		edgesToInsert = append(edgesToInsert, models.WorkflowEdge{
-			Id:         uuid.New().String(),
-			WorkflowId: workflowId,
-			DisplayId:  edgeReq.DisplayId,
-			NodeFrom:   fromId,
-			NodeTo:     toId,
-		})
-	}
-
-	if len(edgesToInsert) > 0 {
-		if err := workflowEdgeRepo.InsertMany(edgesToInsert); err != nil {
-			log.Printf("Failed to insert edges: %v", err)
-			return nil, status.Error(codes.Internal, "failed to save workflow connections")
-		}
-	}
-
-	return &pb.CreateWorkflowResponse{Id: int64(workflowId)}, nil
+    return &pb.CreateWorkflowResponse{Id: int64(workflowId)}, nil
 }
 
 func (s *WorkflowServiceServer) ActivateWorkflow(ctx context.Context, req *pb.ActivateWorkflowRequest) (*pb.ActivateWorkflowResponse, error) {

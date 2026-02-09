@@ -34,6 +34,11 @@ func (repo *Workflow) FindById(id int) (*models.Workflow, error) {
 	return &workflow, nil
 }
 
+func (repo *Workflow) Update(id int, name string) error {
+    _, err := repo.Db.Exec("UPDATE workflows SET name = ? WHERE id = ?", name, id)
+    return err
+}
+
 func (repo *Workflow) Insert(workflow *models.Workflow) error {
 	stmt, err := repo.Db.Prepare("INSERT INTO workflows(name, active, user_id) VALUES (?, ?, ?)");
 	if err != nil {

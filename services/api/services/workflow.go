@@ -19,25 +19,37 @@ func (s *Workflow) CreateWorkflow(ctx context.Context, data dto.CreateWorkflowPa
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
+	fmt.Println(data.Nodes)
 	nodeInput := make([]*pb.NodeInput, 0)
 	for _, node := range data.Nodes {
+		var nodeId *string
+		if node.Id != nil {
+			nodeId = node.Id
+		}
+
 		nodeInput = append(nodeInput, &pb.NodeInput{
-			DisplayId: node.DisplayId,
+			Id:          nodeId,
+			DisplayId:   node.DisplayId,
 			ServiceName: node.ServiceName,
-			TaskName: node.TaskName,
-			Type: node.Type,
-			Position: node.Position,
-			Config: node.Config,
+			TaskName:    node.TaskName,
+			Type:        node.Type,
+			Position:    node.Position,
+			Config:      node.Config,
 			CredentialId: node.CredentialId,
 		})
 	}
 
 	edgeInput := make([]*pb.EdgeInput, 0)
 	for _, edge := range data.Edges {
+		var edgeId *string
+		if edge.Id != nil {
+			edgeId = edge.Id
+		}
 		edgeInput = append(edgeInput, &pb.EdgeInput{
+			Id:        edgeId,
 			DisplayId: edge.DisplayId,
-			FromId: edge.From,
-			ToId: edge.To,
+			FromId:    edge.From,
+			ToId:      edge.To,
 		})
 	}
 
@@ -46,11 +58,17 @@ func (s *Workflow) CreateWorkflow(ctx context.Context, data dto.CreateWorkflowPa
         return nil, errors.New("internal error: user_id missing from context")
     }
 
+	var workflowId int64 = 0
+	if data.Workflow.Id != nil {
+		workflowId = int64(*data.Workflow.Id)
+	}
+
 	req := &pb.CreateWorkflowRequest{
-		Name:     data.Workflow.Name,
+		Id:     workflowId, // NEW: 0 = Create, >0 = Update
+		Name:   data.Workflow.Name,
 		UserId: rawId.(int64),
-		Nodes: nodeInput,
-		Edges: edgeInput,
+		Nodes:  nodeInput,
+		Edges:  edgeInput,
 	}
 
 	res, err := s.GrpcClient.CreateWorkflow(ctx, req)

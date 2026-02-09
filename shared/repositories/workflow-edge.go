@@ -78,3 +78,13 @@ func (repo *WorkflowEdge) InsertMany(workflowEdges []models.WorkflowEdge) error 
 	
 	return nil;
 }
+
+func (repo *WorkflowEdge) DeleteByWorkflowId(workflowId int) error {
+    _, err := repo.Db.Exec("DELETE FROM workflow_edges WHERE workflow_id = ?", workflowId)
+    return err
+}
+
+func (repo *WorkflowEdge) Delete(id string) error {
+    _, err := repo.Db.Exec("DELETE FROM workflow_edges WHERE id = ?", id)
+    return err
+}

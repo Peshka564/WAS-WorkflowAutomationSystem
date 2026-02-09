@@ -24,19 +24,21 @@ message Workflow {
 }
 
 message NodeInput {
-    string display_id = 1;
-    string task_name = 2;
-    string service_name = 3;
-    string type = 4;
-    string position = 5;
-    string config = 6;
-    optional int32 credentialId = 7;
+    optional string id = 1;
+    string display_id = 2;
+    string task_name = 3;
+    string service_name = 4;
+    string type = 5;
+    string position = 6;
+    string config = 7;
+    optional int32 credentialId = 8;
 }
 
 message EdgeInput {
-    string display_id = 1;
-    string from_id = 2;
-    string to_id = 3;
+    optional string id = 1;
+    string display_id = 2;
+    string from_id = 3;
+    string to_id = 4;
 }
 
 message Node {
@@ -69,10 +71,11 @@ message GetWorkflowsResponse {
 }
 
 message CreateWorkflowRequest {
-    string name = 1;
-    int64 user_id = 2;
-    repeated NodeInput nodes = 3;
-    repeated EdgeInput edges = 4;
+    int64 id = 1;
+    string name = 2;
+    int64 user_id = 3;
+    repeated NodeInput nodes = 4;
+    repeated EdgeInput edges = 5;
 }
 
 message CreateWorkflowResponse {

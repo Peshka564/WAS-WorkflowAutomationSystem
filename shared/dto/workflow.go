@@ -3,6 +3,7 @@ package dto
 import "time"
 
 type CreateWorkflow struct {
+	Id   *int   `json:"id"`
 	Name string
 }
 
@@ -18,6 +19,7 @@ type CreateWorkflowNode struct {
 }
 
 type CreateWorkflowEdge struct {
+	Id 			 *string `json:"id"`
 	From      string `validate:"required"`
 	To        string `validate:"required"`
 	DisplayId string `validate:"required"`

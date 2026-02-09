@@ -148,3 +148,17 @@ func (repo *WorkflowNode) Insert(workflowNode *models.WorkflowNode) error {
 	*workflowNode = *newWorkflowNode
 	return nil;
 }
+
+func (repo *WorkflowNode) Delete(id string) error {
+    _, err := repo.Db.Exec("DELETE FROM workflow_nodes WHERE id = ?", id)
+    return err
+}
+
+func (repo *WorkflowNode) Update(node *models.WorkflowNode) error {
+    query := `
+        UPDATE workflow_nodes 
+        SET service_name=?, task_name=?, type=?, config=?, credential_id=?, position=?, display_id=?, workflow_id=?
+        WHERE id=?`
+    _, err := repo.Db.Exec(query, node.ServiceName, node.TaskName, node.Type, node.Config, node.CredentialId, node.Position, node.DisplayId, node.WorkflowId, node.Id)
+    return err
+}

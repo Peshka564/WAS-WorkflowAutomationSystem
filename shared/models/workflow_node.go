@@ -1,7 +1,6 @@
 package models
 
 import (
-	"fmt"
 	"time"
 )
 
@@ -28,7 +27,6 @@ func (nt WorkflowNodeType) String() string {
 
 
 func FromString(s string) WorkflowNodeType {
-	fmt.Println(s)
 	switch s {
 	case "listener":
 		return Listener
