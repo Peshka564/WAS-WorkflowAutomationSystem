@@ -117,8 +117,12 @@ export function WorkflowPage({ allNodes }: Props) {
       // Map Backend Edges -> Frontend Edges
       const loadedEdges = existingWorkflow.edges.map((edge: EdgeData) => ({
         id: edge.display_id,
-        source: edge.node_from,
-        target: edge.node_to,
+        source:
+          existingWorkflow.nodes.find(({ id }) => edge.node_from == id)
+            ?.display_id ?? '',
+        target:
+          existingWorkflow.nodes.find(({ id }) => edge.node_to == id)
+            ?.display_id ?? '',
         markerEnd: {
           type: MarkerType.ArrowClosed,
           width: 20,
@@ -268,7 +272,7 @@ export function WorkflowPage({ allNodes }: Props) {
           <ReactFlow
             nodes={nodes}
             edges={edges}
-            nodeTypes={nodeTypes}
+            nodeTypes={nodeTypes} // Passed from constant
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}

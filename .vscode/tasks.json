@@ -48,7 +48,7 @@
     },
     {
       "label": "app",
-      "dependsOn": ["api", "user", "react-vite: dev"],
+      "dependsOn": ["api", "user", "workflow", "react-vite: dev"],
       "dependsOrder": "parallel",
       "group": {
         "kind": "build",
