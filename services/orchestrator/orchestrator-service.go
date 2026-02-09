@@ -30,12 +30,15 @@ type ExecutionContext struct {
 
 func (orchestrator *OrchestratorService) ExecuteWorkflow(ctx context.Context, listenerNodeId string, initialPayload string) error {
 	workflowNodeRepo := repositories.WorkflowNode{ Db: orchestrator.Db }
-
+	workflowRepo := repositories.Workflow{ Db: orchestrator.Db }
+	
+	
 	listenerNode, err := workflowNodeRepo.FindById(listenerNodeId)
 	if err != nil {
 		return fmt.Errorf("Invalid trigger node");
 	}
 	workflowId := listenerNode.WorkflowId
+	workflow, _ := workflowRepo.FindById(workflowId)
 
 	log.Printf("Starting Workflow %d", workflowId)
 
@@ -63,7 +66,7 @@ func (orchestrator *OrchestratorService) ExecuteWorkflow(ctx context.Context, li
 
 		switch node.Type.String() {
 		case "action":
-			outputJSON, execErr = orchestrator.executeAction(ctx, node, state)
+			outputJSON, execErr = orchestrator.executeAction(ctx, node, workflow.UserId, state)
 		// case "transformer":
 		// 	outputJSON, execErr = orchestrator.executeTransformer(ctx, node, state)
 		default:
@@ -92,27 +95,14 @@ func (orchestrator *OrchestratorService) ExecuteWorkflow(ctx context.Context, li
 	return nil
 }
 
-func (orchestrator *OrchestratorService) executeAction(ctx context.Context, node models.WorkflowNode, state *ExecutionContext) (string, error) {
-	// A. Variable Resolution (The "Smart Orchestrator" Pattern)
-	// We take '{"subject": "Hello {{trigger.name}}"}' and turn it into '{"subject": "Hello Bob"}'
+func (orchestrator *OrchestratorService) executeAction(ctx context.Context, node models.WorkflowNode, userId int, state *ExecutionContext) (string, error) {
+	// '{"subject": "Hello {{trigger.name}}"}' -> '{"subject": "Hello Bob"}'
 	// resolvedConfig, err := e.resolveVariables(node.ConfigJSON, state.CurrentData)
 	// if err != nil {
 	// 	return "", fmt.Errorf("variable resolution failed: %v", err)
 	// }
 
-	// Authenticate with the third party api for the task
-	var authToken string
-	if node.CredentialId != nil {
-		tokenResp, err := orchestrator.UserService.GetCredentials(ctx, &pb.GetCredentialsRequest{
-			CredentialId: int32(*node.CredentialId),
-		})
-		if err != nil {
-			return "", fmt.Errorf("auth failure: %v", err)
-		}
-		authToken = tokenResp.AccessToken
-	}
-
-	// C. Service Discovery
+	// Service Discovery
 	// Look up where the worker lives (e.g., "gmail" -> "localhost:50052")
 	// serviceAddr, exists := e.Registry[node.ServiceSlug]
 	// if !exists {
@@ -120,14 +110,33 @@ func (orchestrator *OrchestratorService) executeAction(ctx context.Context, node
 	// 	serviceAddr = "localhost:50052" // Hardcoded fallback for demo
 	// }
 
+	credentialId := 0
+	orchestrator.Db.QueryRow("SELECT id FROM credentials WHERE user_id = ?", userId).Scan(&credentialId)
+
+	// Authenticate with the third party api for the task
+	var authToken string
+	// if node.CredentialId != nil {
+	tokenResp, err := orchestrator.UserService.GetCredentials(ctx, &pb.GetCredentialsRequest{
+		CredentialId: int32(credentialId),
+	})
+	if err != nil {
+		return "", fmt.Errorf("auth failure: %v", err)
+	}
+	authToken = tokenResp.AccessToken
+	// }
+
+	
 	if(node.ServiceName == "gmail") {
+		var subject, body, emailTo string
+		orchestrator.Db.QueryRow("SELECT subject, body, email_to FROM email_templates WHERE user_id = ?", userId).Scan(&subject, &body, &emailTo)
+		
 		res, err := orchestrator.GmailService.ExecuteTask(ctx, &pb.TaskRequest{
 			TaskName:   node.TaskName,
-			ConfigJson: `{
-				"to": "petaryp@uni-sofia.bg",
-				"subject": "Answer",
-				"body": "Answer body"
-			}`,
+			ConfigJson: fmt.Sprintf(`{
+				"subject": "%s",
+				"body": "%s",
+				"to": "%s"
+			}`, subject, body, emailTo),
 			AuthToken:  authToken,
 		})
 		if err != nil {
@@ -140,7 +149,6 @@ func (orchestrator *OrchestratorService) executeAction(ctx context.Context, node
 		return res.OutputPayload, nil
 	}
 	return "", nil
-	// D. gRPC Call
 	// Dial the worker dynamically
 	// conn, err := grpc.Dial(serviceAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	// if err != nil {
@@ -167,10 +175,6 @@ func (orchestrator *OrchestratorService) executeAction(ctx context.Context, node
 	// return resp.OutputPayload, nil
 }
 
-// ---------------------------------------------------------------------------
-// 3. Transformer Executor (The "Internal Logic")
-// ---------------------------------------------------------------------------
-
 // func (e *Engine) executeTransformer(ctx context.Context, node Node, state *ExecutionContext) (string, error) {
 // 	// Example: A "Delay" transformer
 // 	if node.ActionSlug == "delay" {
@@ -183,10 +187,6 @@ func (orchestrator *OrchestratorService) executeAction(ctx context.Context, node
 	
 // 	return "{}", nil
 // }
-
-// ---------------------------------------------------------------------------
-// 4. Helpers (Parser & DB)
-// ---------------------------------------------------------------------------
 
 // func (e *Engine) resolveVariables(templateJSON string, data map[string]interface{}) (string, error) {
 // 	// Uses Go's text/template to replace {{ key }} with values

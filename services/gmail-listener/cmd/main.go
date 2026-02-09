@@ -32,7 +32,10 @@ type GmailListener struct {
 
 type TriggerJob struct {
 	NodeId       string
-	Credentialid int
+	WorkflowId int
+	UserId int
+	Active bool
+	Credentialid *int
 	LastCheckAt  time.Time
 	// This is used as a hack because there are cases when we can get duplicate gmail emails
 	LastMessageId string
@@ -43,11 +46,15 @@ func (l *GmailListener) Poll() {
 	// We get each node from every workflow which is a listener node and we query the gmail API for it
 	rows, err := l.Db.Query(`
         SELECT 
-            n.id, 
+            n.id,
+			n.workflow_id,
+			workflows.user_id,
+			workflows.active,
             n.credential_id, 
             COALESCE(t.last_check_at, CAST('1971-01-01 00:00:00' AS DATETIME)), 
             COALESCE(t.last_message_id, '')
         FROM workflow_nodes n
+		JOIN workflows ON n.workflow_id = workflows.id
         LEFT JOIN trigger_states t ON n.id = t.node_id
         WHERE n.type = 0 
           AND n.service_name = 'gmail'
@@ -64,7 +71,10 @@ func (l *GmailListener) Poll() {
 	for rows.Next() {
 		var job TriggerJob
 		err := rows.Scan(
-            &job.NodeId, 
+            &job.NodeId,
+			&job.WorkflowId,
+			&job.UserId,
+			&job.Active,
             &job.Credentialid, 
             &job.LastCheckAt, 
             &job.LastMessageId,
@@ -73,6 +83,10 @@ func (l *GmailListener) Poll() {
             log.Printf("Scan error: %v", err)
             continue
         }
+		if(!job.Active) {
+			continue
+		}
+
 		// Note: We don't parallelize this due to rate limits
 		l.CheckForNewEmails(job)
 	}
@@ -84,8 +98,12 @@ func (l *GmailListener) CheckForNewEmails(job TriggerJob) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5 * time.Second)
 	defer cancel()
 	
+	credentialId := 0
+	l.Db.QueryRow("SELECT id FROM credentials WHERE user_id = ?", job.UserId).Scan(&credentialId)
+
+
 	tokenResp, err := l.UserService.GetCredentials(ctx, &pb.GetCredentialsRequest{
-		CredentialId: int32(job.Credentialid),
+		CredentialId: int32(credentialId),
 	})
 	if err != nil {
 		log.Printf("Auth Failed for Node %s: %v", job.NodeId, err)
@@ -204,7 +222,7 @@ func main() {
         return;
     }
 	
-	err = godotenv.Load()
+	err = godotenv.Load("../../.env")
 	if err != nil {
 		log.Fatal("Could not load ENV vars", err);
 		return;

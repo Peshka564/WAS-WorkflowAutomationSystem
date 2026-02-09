@@ -40,7 +40,6 @@ const Navbar = () => {
             </Typography>
           </Box>
 
-          {/* 2. COMMUNITY BUTTON (Pushed to the left/center) */}
           <Box sx={{ flexGrow: 1 }}>
             <Button
               component={Link}
@@ -51,7 +50,26 @@ const Navbar = () => {
             </Button>
           </Box>
 
-          {/* 3. LOGOUT BUTTON (Far Right) */}
+          <Box sx={{ flexGrow: 1 }}>
+            <Button
+              component={Link}
+              to="/connections"
+              sx={{ my: 2, color: 'white', display: 'block' }}
+            >
+              Connections
+            </Button>
+          </Box>
+
+          <Box sx={{ flexGrow: 1 }}>
+            <Button
+              component={Link}
+              to="/templates"
+              sx={{ my: 2, color: 'white', display: 'block' }}
+            >
+              Templates
+            </Button>
+          </Box>
+
           <Box sx={{ flexGrow: 0 }}>
             <Button color="inherit" onClick={handleLogout}>
               Logout

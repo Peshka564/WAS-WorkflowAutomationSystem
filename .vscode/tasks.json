@@ -32,6 +32,36 @@
       "problemMatcher": "$go"
     },
     {
+      "label": "gmail-listener",
+      "type": "shell",
+      "command": "air",
+      "options": {
+        "cwd": "${workspaceFolder}/services/gmail-listener"
+      },
+      "isBackground": true, // Lets VS Code know this runs forever
+      "problemMatcher": "$go"
+    },
+    {
+      "label": "gmail-service",
+      "type": "shell",
+      "command": "air",
+      "options": {
+        "cwd": "${workspaceFolder}/services/gmail"
+      },
+      "isBackground": true, // Lets VS Code know this runs forever
+      "problemMatcher": "$go"
+    },
+    {
+      "label": "orchestrator-service",
+      "type": "shell",
+      "command": "air",
+      "options": {
+        "cwd": "${workspaceFolder}/services/orchestrator"
+      },
+      "isBackground": true, // Lets VS Code know this runs forever
+      "problemMatcher": "$go"
+    },
+    {
       "label": "react-vite: dev",
       "type": "npm",
       "script": "dev",
@@ -48,7 +78,15 @@
     },
     {
       "label": "app",
-      "dependsOn": ["api", "user", "workflow", "react-vite: dev"],
+      "dependsOn": [
+        "api",
+        "user",
+        "workflow",
+        "orchestrator-service",
+        "gmail-listener",
+        "gmail-service",
+        "react-vite: dev"
+      ],
       "dependsOrder": "parallel",
       "group": {
         "kind": "build",

@@ -10,6 +10,8 @@ import type { ReactNode } from 'react';
 import { LoginPage } from './pages/LoginPage';
 import { AuthGuard } from './components/AuthGuard';
 import Dashboard from './pages/Dashboard';
+import { ConnectionsPage } from './pages/ConnectionsPage';
+import { TemplatesPage } from './pages/TemplatesPage';
 
 // TODO: Get these from db
 const allNodes: WorkflowNodeDisplaySelector[] = [
@@ -89,6 +91,26 @@ export function App() {
                     <WorkflowPage allNodes={allNodes} />
                   </Layout>
                 </ReactFlowProvider>
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/connections"
+            element={
+              <AuthGuard>
+                <Layout>
+                  <ConnectionsPage />
+                </Layout>
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/templates"
+            element={
+              <AuthGuard>
+                <Layout>
+                  <TemplatesPage />
+                </Layout>
               </AuthGuard>
             }
           />

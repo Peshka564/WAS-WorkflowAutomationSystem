@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/Peshka564/WAS-WorkflowAutomationSystem/services/api/middleware"
 	"github.com/Peshka564/WAS-WorkflowAutomationSystem/services/api/server"
@@ -15,6 +16,8 @@ import (
 	"github.com/go-playground/validator/v10"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/joho/godotenv"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -47,12 +50,22 @@ func main() {
 	defer workflowConn.Close()
 	workflowService := services.Workflow{ GrpcClient: pb.NewWorkflowServiceClient(workflowConn) }
 
+
+	var googleOauthConfig = &oauth2.Config{
+		RedirectURL:  "http://localhost:3000/api/auth/google/callback",
+		ClientID:     os.Getenv("GOOGLE_CLIENT_ID"),
+		ClientSecret: os.Getenv("GOOGLE_CLIENT_SECRET"),
+		Scopes:       []string{"https://www.googleapis.com/auth/gmail.send", "https://www.googleapis.com/auth/gmail.readonly"},
+		Endpoint:     google.Endpoint,
+	}
+
     app := server.App{
         Db: db,
         Router: chi.NewRouter(),
         Validator: validator.New(),
         UserService: &userService,
         WorkflowService: &workflowService,
+		OAuthConfig: googleOauthConfig,
     }
 
     app.Router.Use(chi_middleware.Logger)
@@ -64,6 +77,7 @@ func main() {
     
     app.Router.Post("/api/register", app.RegisterUser)
     app.Router.Post("/api/login", app.LoginUser)
+	app.Router.Get("/api/auth/google/callback", app.GoogleCallback)
     
     app.Router.Group(func(r chi.Router) {
 		r.Use(middleware.AuthMiddleware)
@@ -72,6 +86,10 @@ func main() {
 		r.Post("/api/workflows", app.CreateWorkflow)
         r.Patch("/api/workflows/{id}/activate", app.ActivateWorkflow)
         r.Get("/api/workflows/{id}", app.GetWorkflowById)
+		r.Get("/api/connections", app.GetConnections)
+		r.Get("/api/auth/google/login", app.GoogleLogin)
+		r.Get("/api/templates", app.GetTemplates)
+		r.Post("/api/templates", app.SaveTemplate)
 	})
     
     err = http.ListenAndServe(":3000", app.Router)
